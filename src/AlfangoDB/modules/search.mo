@@ -1,6 +1,11 @@
 import Array "mo:base/Array";
+import Bool "mo:base/Bool";
 import Buffer "mo:base/Buffer";
 import Debug "mo:base/Debug";
+import Int "mo:base/Int";
+import Iter "mo:base/Iter";
+import Nat "mo:base/Nat";
+import Order "mo:base/Order";
 import Prelude "mo:base/Prelude";
 import Text "mo:base/Text";
 import Map "mo:map/Map";
@@ -11,6 +16,8 @@ import Datatypes "../types/datatype";
 import InputTypes "../types/input";
 import OutputTypes "../types/output";
 import SearchTypes "../types/search";
+import Utils "../utils";
+
 module {
 
     type AttributeDataValue = Datatypes.AttributeDataValue;
@@ -30,33 +37,37 @@ module {
         // get databases
         let databases = alfangoDB.databases;
 
-        let { databaseName; tableName; filterExpressions; } = scanInput;
+        let { databaseName; tableName; filterExpressions } = scanInput;
 
         // check if database exists
         if (not Map.has(databases, thash, databaseName)) {
-            let remark = "database does not exist: " # debug_show(databaseName);
+            let remark = "database does not exist: " # debug_show (databaseName);
             Debug.print(remark);
-            return #err([ remark ]);
+            return #err([remark]);
         };
 
-        ignore do ?{
+        ignore do ? {
             let database = Map.get(databases, thash, databaseName)!;
 
             // check if table exists
             if (not Map.has(database.tables, thash, tableName)) {
-                let remark = "table does not exist: " # debug_show(tableName);
+                let remark = "table does not exist: " # debug_show (tableName);
                 Debug.print(remark);
-                return #err([ remark ]);
+                return #err([remark]);
             };
 
             let table = Map.get(database.tables, thash, tableName)!;
             let tableItems = table.items;
 
-            let filteredItemMap = Map.filter(tableItems, thash, func(_itemId : Database.Id, item: Database.Item) : Bool {
-                applyFilterExpression({ item; filterExpressions; });
-            });
+            let filteredItemMap = Map.filter(
+                tableItems,
+                thash,
+                func(_itemId : Database.Id, item : Database.Item) : Bool {
+                    applyFilterExpression({ item; filterExpressions });
+                },
+            );
 
-            let filteredItemsBuffer = Buffer.Buffer<{ id : Text; item: [(Text, Datatypes.AttributeDataValue)] }>(filteredItemMap.size());
+            let filteredItemsBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(filteredItemMap.size());
             for (filteredItem in Map.valsDesc(filteredItemMap)) {
                 filteredItemsBuffer.add({
                     id = filteredItem.id;
@@ -78,23 +89,23 @@ module {
         // get databases
         let databases = alfangoDB.databases;
 
-        let { databaseName; tableName; filterExpressions; } = scanAndGetIdsInput;
+        let { databaseName; tableName; filterExpressions } = scanAndGetIdsInput;
 
         // check if database exists
         if (not Map.has(databases, thash, databaseName)) {
-            let remark = "database does not exist: " # debug_show(databaseName);
+            let remark = "database does not exist: " # debug_show (databaseName);
             Debug.print(remark);
-            return #err([ remark ]);
+            return #err([remark]);
         };
 
-        ignore do ?{
+        ignore do ? {
             let database = Map.get(databases, thash, databaseName)!;
 
             // check if table exists
             if (not Map.has(database.tables, thash, tableName)) {
-                let remark = "table does not exist: " # debug_show(tableName);
+                let remark = "table does not exist: " # debug_show (tableName);
                 Debug.print(remark);
-                return #err([ remark ]);
+                return #err([remark]);
             };
 
             let table = Map.get(database.tables, thash, tableName)!;
@@ -103,8 +114,8 @@ module {
             let filteredItemIdsBuffer = Buffer.Buffer<Text>(0);
             for (item in Map.valsDesc(tableItems)) {
                 // apply filter expression
-                if (applyFilterExpression({ item; filterExpressions; })) {
-                    filteredItemIdsBuffer.add(item.id)
+                if (applyFilterExpression({ item; filterExpressions })) {
+                    filteredItemIdsBuffer.add(item.id);
                 };
             };
 
@@ -117,30 +128,32 @@ module {
     };
 
     public func paginatedScan({
-        paginatedScanInput: InputTypes.PaginatedScanInputType;
-        alfangoDB: Database.AlfangoDB;
+        paginatedScanInput : InputTypes.PaginatedScanInputType;
+        alfangoDB : Database.AlfangoDB;
+        sortKey : Text;
+        sortKeyDataType : Datatypes.AttributeDataType;
     }) : OutputTypes.PaginatedScanOutputType {
 
         // get databases
         let databases = alfangoDB.databases;
 
-        let { databaseName; tableName; filterExpressions; limit; offset; } = paginatedScanInput;
+        let { databaseName; tableName; filterExpressions; limit; offset } = paginatedScanInput;
 
         // check if database exists
         if (not Map.has(databases, thash, databaseName)) {
-            let remark = "database does not exist: " # debug_show(databaseName);
+            let remark = "database does not exist: " # debug_show (databaseName);
             Debug.print(remark);
-            return #err([ remark ]);
+            return #err([remark]);
         };
 
-        ignore do ?{
+        ignore do ? {
             let database = Map.get(databases, thash, databaseName)!;
 
             // check if table exists
             if (not Map.has(database.tables, thash, tableName)) {
-                let remark = "table does not exist: " # debug_show(tableName);
+                let remark = "table does not exist: " # debug_show (tableName);
                 Debug.print(remark);
-                return #err([ remark ]);
+                return #err([remark]);
             };
 
             let table = Map.get(database.tables, thash, tableName)!;
@@ -148,22 +161,52 @@ module {
 
             // check if offser is out of bounds
             if (offset >= Map.size(tableItems)) {
-                return #err([ "offset is greater than the number of items in the table" ]);
+                return #err(["offset is greater than the number of items in the table"]);
             };
 
             // check if limit is greater than 0
             if (limit == 0) {
-                return #err([ "limit should be greater than 0" ]);
+                return #err(["limit should be greater than 0"]);
             };
 
             var itemIdx : Int = -1;
             var filteredItemCount : Nat = 0;
-            let filteredItemBuffer = Buffer.Buffer<{ id : Text; item: [(Text, Datatypes.AttributeDataValue)] }>(limit);
-            label items for (item in Map.valsDesc(tableItems)) {
+            let filteredItemBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(limit);
+
+            let items = Map.toArrayDesc(tableItems);
+            var sortedItems : [(Database.Id, Database.Item)] = [];
+
+            switch (sortKeyDataType) {
+                case (#nat) {
+                    sortedItems := Array.sort(
+                        items,
+                        (
+                            func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                                return Nat.compare(Utils.getNatKeyValue(b, sortKey), Utils.getNatKeyValue(a, sortKey)); // Sort in descending order
+                            }
+                        ),
+                    );
+                };
+                case _ {
+                    sortedItems := Array.sort(
+                        items,
+                        (
+                            func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                                return Text.compare(Utils.getTextKeyValue(b, sortKey), Utils.getTextKeyValue(a, sortKey)); // Sort in descending order
+                            }
+                        ),
+                    );
+                };
+            };
+
+            let sortedItemsIter = Iter.fromArray(sortedItems);
+            let sortedItemsMap = Map.fromIter<Database.Id, Database.Item>(sortedItemsIter, thash);
+
+            label items for (item in Map.valsDesc(sortedItemsMap)) {
                 itemIdx := itemIdx + 1;
-                Debug.print("itemIdx: " # debug_show(itemIdx) # " offset: " # debug_show(offset) # " limit: " # debug_show(limit) # " filteredItemCount: " # debug_show(filteredItemCount) # " item: " # debug_show(item.id));
+                Debug.print("itemIdx: " # debug_show (itemIdx) # " offset: " # debug_show (offset) # " limit: " # debug_show (limit) # " filteredItemCount: " # debug_show (filteredItemCount) # " item: " # debug_show (item.id));
                 // apply filter expression
-                if (applyFilterExpression({ item; filterExpressions; })) {
+                if (applyFilterExpression({ item; filterExpressions })) {
                     filteredItemCount := filteredItemCount + 1;
                     // check if item is within the offset and limit
                     if (filteredItemCount > offset) {
@@ -195,29 +238,28 @@ module {
     };
 
     private func applyFilterExpression({
-        item: Database.Item;
-        filterExpressions: [ FilterExpressionType ];
+        item : Database.Item;
+        filterExpressions : [FilterExpressionType];
     }) : Bool {
 
-        let attributeDataValueMap = item.attributeDataValueMap; 
+        let attributeDataValueMap = item.attributeDataValueMap;
         var filterExpressionResult = true;
 
         // iterate over filter expressions and apply them
         for (filterExpression in filterExpressions.vals()) {
-            let { attributeName; filterExpressionCondition; } = filterExpression;
+            let { attributeName; filterExpressionCondition } = filterExpression;
 
             var currentFilterExpressionResult = false;
             // check if attribute exists
             if (Map.has(attributeDataValueMap, thash, attributeName)) {
-                ignore do? {
+                ignore do ? {
                     // apply filter expression condition when attribute exists
                     currentFilterExpressionResult := applyFilterExpressionCondition({
                         filterExpressionCondition;
                         attributeDataValue = Map.get(attributeDataValueMap, thash, attributeName)!;
                     });
-                }
-            }
-            // if attribute does not exist, apply #NOT_EXISTS condition
+                };
+            } // if attribute does not exist, apply #NOT_EXISTS condition
             else if (filterExpressionCondition == #NOT_EXISTS) {
                 currentFilterExpressionResult := true;
             };
@@ -229,28 +271,46 @@ module {
     };
 
     private func applyFilterExpressionCondition({
-        filterExpressionCondition: FilterExpressionConditionType;
-        attributeDataValue: AttributeDataValue;
+        filterExpressionCondition : FilterExpressionConditionType;
+        attributeDataValue : AttributeDataValue;
     }) : Bool {
 
         switch (filterExpressionCondition) {
             case (#EQ(conditionAttributeDataValue)) {
-                return applyFilterEQ({ attributeDataValue; conditionAttributeDataValue; });
+                return applyFilterEQ({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
             case (#NEQ(conditionAttributeDataValue)) {
-                return not applyFilterEQ({ attributeDataValue; conditionAttributeDataValue; });
+                return not applyFilterEQ({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
             case (#LT(conditionAttributeDataValue)) {
-                return applyFilterLT({ attributeDataValue; conditionAttributeDataValue; });
+                return applyFilterLT({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
             case (#LTE(conditionAttributeDataValue)) {
-                return applyFilterLTE({ attributeDataValue; conditionAttributeDataValue; });
+                return applyFilterLTE({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
             case (#GT(conditionAttributeDataValue)) {
-                return not applyFilterLTE({ attributeDataValue; conditionAttributeDataValue; });
+                return not applyFilterLTE({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
             case (#GTE(conditionAttributeDataValue)) {
-                return not applyFilterLT({ attributeDataValue; conditionAttributeDataValue; });
+                return not applyFilterLT({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
             case (#EXISTS) {
                 return true;
@@ -259,22 +319,40 @@ module {
                 return false;
             };
             case (#BEGINS_WITH(conditionAttributeDataValue)) {
-                return applyFilterBEGINS_WITH({ attributeDataValue; conditionAttributeDataValue; });
+                return applyFilterBEGINS_WITH({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
             case (#CONTAINS(conditionAttributeDataValue)) {
-                return applyFilterCONTAINS({ attributeDataValue; conditionAttributeDataValue; });
+                return applyFilterCONTAINS({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
             case (#NOT_CONTAINS(conditionAttributeDataValue)) {
-                return not applyFilterCONTAINS({ attributeDataValue; conditionAttributeDataValue; });
+                return not applyFilterCONTAINS({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
             case (#IN(conditionAttributeDataValue)) {
-                return applyFilterIN({ attributeDataValue; conditionAttributeDataValue; });
+                return applyFilterIN({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
             case (#BETWEEN(conditionAttributeDataValue)) {
-                return applyFilterBETWEEN({ attributeDataValue; conditionAttributeDataValue; });
+                return applyFilterBETWEEN({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
             case (#NOT_BETWEEN(conditionAttributeDataValue)) {
-                return not applyFilterBETWEEN({ attributeDataValue; conditionAttributeDataValue; });
+                return not applyFilterBETWEEN({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
             };
         };
 
@@ -282,8 +360,8 @@ module {
     };
 
     private func applyFilterEQ({
-        attributeDataValue: AttributeDataValue;
-        conditionAttributeDataValue: RelationalExpressionAttributeDataValue;
+        attributeDataValue : AttributeDataValue;
+        conditionAttributeDataValue : RelationalExpressionAttributeDataValue;
     }) : Bool {
 
         var areEqual = false;
@@ -390,8 +468,8 @@ module {
     };
 
     private func applyFilterLT({
-        attributeDataValue: AttributeDataValue;
-        conditionAttributeDataValue: RelationalExpressionAttributeDataValue;
+        attributeDataValue : AttributeDataValue;
+        conditionAttributeDataValue : RelationalExpressionAttributeDataValue;
     }) : Bool {
 
         var isLessThan = false;
@@ -474,7 +552,7 @@ module {
                     case (_) isLessThan := false;
                 };
             };
-            case (#bool(inputDataValue)) {
+            case (#bool(_inputDataValue)) {
                 switch (attributeDataValue) {
                     case (#bool(attributeDataValue)) isLessThan := false;
                     case (_) isLessThan := false;
@@ -498,8 +576,8 @@ module {
     };
 
     private func applyFilterLTE({
-        attributeDataValue: AttributeDataValue;
-        conditionAttributeDataValue: RelationalExpressionAttributeDataValue;
+        attributeDataValue : AttributeDataValue;
+        conditionAttributeDataValue : RelationalExpressionAttributeDataValue;
     }) : Bool {
 
         var isLessThanOrEqual = false;
@@ -606,8 +684,8 @@ module {
     };
 
     private func applyFilterBEGINS_WITH({
-        attributeDataValue: AttributeDataValue;
-        conditionAttributeDataValue: StringAttributeDataValue;
+        attributeDataValue : AttributeDataValue;
+        conditionAttributeDataValue : StringAttributeDataValue;
     }) : Bool {
 
         var beginsWith = false;
@@ -630,8 +708,8 @@ module {
     };
 
     private func applyFilterCONTAINS({
-        attributeDataValue: AttributeDataValue;
-        conditionAttributeDataValue: ContaintmentExpressionAttributeDataValue;
+        attributeDataValue : AttributeDataValue;
+        conditionAttributeDataValue : ContaintmentExpressionAttributeDataValue;
     }) : Bool {
 
         var contains = false;
@@ -648,17 +726,20 @@ module {
                     case (_) contains := false;
                 };
             };
-            case (#list(inputDataValueList)){
+            case (#list(inputDataValueList)) {
                 switch (attributeDataValue) {
                     case (#list(attributeDataValueList)) {
                         return Array.foldLeft<RelationalExpressionAttributeDataValue, Bool>(
                             inputDataValueList,
                             true,
-                            func(soFarContains, inputDataValue) = soFarContains and applyFilterIN({ attributeDataValue = inputDataValue; conditionAttributeDataValue = attributeDataValueList; })
+                            func(soFarContains, inputDataValue) = soFarContains and applyFilterIN({
+                                attributeDataValue = inputDataValue;
+                                conditionAttributeDataValue = attributeDataValueList;
+                            }),
                         );
                     };
                     case (_) contains := false;
-                }
+                };
             };
         };
 
@@ -666,22 +747,28 @@ module {
     };
 
     private func applyFilterIN({
-        attributeDataValue: AttributeDataValue;
-        conditionAttributeDataValue:  [ RelationalExpressionAttributeDataValue ];
+        attributeDataValue : AttributeDataValue;
+        conditionAttributeDataValue : [RelationalExpressionAttributeDataValue];
     }) : Bool {
 
-        return Array.find<RelationalExpressionAttributeDataValue>(conditionAttributeDataValue, func(conditionAttributeDataValueInValue: RelationalExpressionAttributeDataValue) : Bool {
-            applyFilterEQ({ attributeDataValue; conditionAttributeDataValue = conditionAttributeDataValueInValue; });
-        }) != null;
+        return Array.find<RelationalExpressionAttributeDataValue>(
+            conditionAttributeDataValue,
+            func(conditionAttributeDataValueInValue : RelationalExpressionAttributeDataValue) : Bool {
+                applyFilterEQ({
+                    attributeDataValue;
+                    conditionAttributeDataValue = conditionAttributeDataValueInValue;
+                });
+            },
+        ) != null;
     };
 
     private func applyFilterBETWEEN({
-        attributeDataValue: AttributeDataValue;
-        conditionAttributeDataValue: (RelationalExpressionAttributeDataValue, RelationalExpressionAttributeDataValue);
+        attributeDataValue : AttributeDataValue;
+        conditionAttributeDataValue : (RelationalExpressionAttributeDataValue, RelationalExpressionAttributeDataValue);
     }) : Bool {
 
         var isBetween = false;
-        switch(conditionAttributeDataValue) {
+        switch (conditionAttributeDataValue) {
             case ((#int(lowerInputDataValue), #int(upperInputDataValue))) {
                 switch (attributeDataValue) {
                     case (#int(attributeDataValue)) isBetween := lowerInputDataValue <= attributeDataValue and attributeDataValue <= upperInputDataValue;
@@ -762,7 +849,7 @@ module {
             };
             case _ {
                 Prelude.unreachable();
-            }
+            };
         };
 
         return isBetween;
