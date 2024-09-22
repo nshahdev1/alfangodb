@@ -174,27 +174,32 @@ module {
 
             var sortedItems : [(Database.Id, Database.Item)] = [];
 
-            let sortDirection = Utils.initializeSortOrder(paginatedScanInput.sortDirection, #desc);
+            switch (paginatedScanInput.sortKey) {
+                case (?sortKey) {
+                    let sortDirection = Utils.initializeSortOrder(paginatedScanInput.sortDirection, #desc);
 
-            let sortKey = Utils.initializeTextField(paginatedScanInput.sortKey, "start_date");
+                    let sortKeyDataType = Utils.initializeSortKeyDataType(paginatedScanInput.sortKeyDataType, #nat);
 
-            let sortKeyDataType = Utils.initializeSortKeyDataType(paginatedScanInput.sortKeyDataType, #nat);
+                    switch (sortDirection) {
+                        case (#desc) {
+                            items := Map.toArrayDesc(tableItems);
+                            sortedItems := Utils.sortDescending(items, sortKey, sortKeyDataType);
+                        };
+                        case (#asc) {
+                            items := Map.toArray(tableItems);
+                            sortedItems := Utils.sortAscending(items, sortKey, sortKeyDataType);
+                        };
+                    };
 
-            switch (sortDirection) {
-                case (#desc) {
-                    items := Map.toArrayDesc(tableItems);
-                    sortedItems := Utils.sortDescending(items, sortKey, sortKeyDataType);
                 };
-                case (#asc) {
-                    items := Map.toArray(tableItems);
-                    sortedItems := Utils.sortAscending(items, sortKey, sortKeyDataType);
-                };
+
+                case null sortedItems := Map.toArrayDesc(tableItems);
             };
 
             let sortedItemsIter = Iter.fromArray(sortedItems);
             let sortedItemsMap = Map.fromIter<Database.Id, Database.Item>(sortedItemsIter, thash);
 
-            label items for (item in Map.valsDesc(sortedItemsMap)) {
+            label items for (item in Map.vals(sortedItemsMap)) {
                 itemIdx := itemIdx + 1;
                 Debug.print("itemIdx: " # debug_show (itemIdx) # " offset: " # debug_show (offset) # " limit: " # debug_show (limit) # " filteredItemCount: " # debug_show (filteredItemCount) # " item: " # debug_show (item.id));
                 // apply filter expression
