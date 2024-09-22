@@ -357,9 +357,11 @@ module {
     };
 
     private func applyFilterEQ({
-        attributeDataValue : AttributeDataValue;
-        conditionAttributeDataValue : RelationalExpressionAttributeDataValue;
+        attributeDataValue : AttributeDataValue; // #list([#text("health"),#text(#"entertainment")])
+        conditionAttributeDataValue : RelationalExpressionAttributeDataValue // #text("health");
     }) : Bool {
+        Debug.print("Attribute data value --> " # debug_show (attributeDataValue));
+        Debug.print("Condition data value --> " # debug_show (conditionAttributeDataValue));
 
         var areEqual = false;
         switch (conditionAttributeDataValue) {
@@ -432,6 +434,30 @@ module {
             case (#text(inputDataValue)) {
                 switch (attributeDataValue) {
                     case (#text(attributeDataValue)) areEqual := inputDataValue == attributeDataValue;
+                    case (#list(attributeDataValue)) {
+                        switch (attributeDataValue) {
+                            case (attributeDataValue) {
+                                label items for (atttibuteData in attributeDataValue.vals()) {
+                                    switch (atttibuteData) {
+                                        case (#text(atttibuteData)) {
+
+                                            areEqual := inputDataValue == atttibuteData;
+
+                                            if (areEqual) {
+                                                break items;
+                                            };
+                                        };
+
+                                        case _ areEqual := false;
+                                    };
+
+                                };
+                            };
+
+                        };
+
+                    };
+
                     case (_) areEqual := false;
                 };
             };
@@ -744,9 +770,12 @@ module {
     };
 
     private func applyFilterIN({
-        attributeDataValue : AttributeDataValue;
-        conditionAttributeDataValue : [RelationalExpressionAttributeDataValue];
+        attributeDataValue : AttributeDataValue; // [#text("health"),#text(#"entertainment")]
+        conditionAttributeDataValue : [RelationalExpressionAttributeDataValue] // [#text("health")];
     }) : Bool {
+
+        Debug.print("Attribute data value --> " # debug_show (attributeDataValue));
+        Debug.print("Condition data value --> " # debug_show (conditionAttributeDataValue));
 
         return Array.find<RelationalExpressionAttributeDataValue>(
             conditionAttributeDataValue,
