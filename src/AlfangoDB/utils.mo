@@ -13,6 +13,7 @@ import Nat16 "mo:base/Nat16";
 import Nat32 "mo:base/Nat32";
 import Nat64 "mo:base/Nat64";
 import Nat8 "mo:base/Nat8";
+import Order "mo:base/Order";
 import Prelude "mo:base/Prelude";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
@@ -40,6 +41,7 @@ import ULID "mo:ulid/ULID";
 
 import Database "types/database";
 import Datatypes "types/datatype";
+import Datatype "types/datatype";
 
 module {
 
@@ -454,5 +456,82 @@ module {
 
         };
         return res;
+    };
+
+    public func sortAscending(items : [(Database.Id, Database.Item)], sortKey : Text, sortKeyDataType : Datatypes.AttributeDataType) : [(Database.Id, Database.Item)] {
+        var sortedItems : [(Database.Id, Database.Item)] = [];
+
+        switch (sortKeyDataType) {
+            case (#nat) {
+                sortedItems := Array.sort(
+                    items,
+                    (
+                        func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                            return Nat.compare(getNatKeyValue(a, sortKey), getNatKeyValue(b, sortKey)); // Sort in ascending order
+                        }
+                    ),
+                );
+            };
+            case _ {
+                sortedItems := Array.sort(
+                    items,
+                    (
+                        func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                            return Text.compare(getTextKeyValue(a, sortKey), getTextKeyValue(b, sortKey)); // Sort in ascending order
+                        }
+                    ),
+                );
+            };
+        };
+        return sortedItems;
+    };
+
+    public func sortDescending(items : [(Database.Id, Database.Item)], sortKey : Text, sortKeyDataType : Datatypes.AttributeDataType) : [(Database.Id, Database.Item)] {
+        var sortedItems : [(Database.Id, Database.Item)] = [];
+
+        switch (sortKeyDataType) {
+            case (#nat) {
+                sortedItems := Array.sort(
+                    items,
+                    (
+                        func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                            return Nat.compare(getNatKeyValue(b, sortKey), getNatKeyValue(a, sortKey)); // Sort in descending order
+                        }
+                    ),
+                );
+            };
+            case _ {
+                sortedItems := Array.sort(
+                    items,
+                    (
+                        func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                            return Text.compare(getTextKeyValue(b, sortKey), getTextKeyValue(a, sortKey)); // Sort in descending order
+                        }
+                    ),
+                );
+            };
+        };
+        return sortedItems;
+    };
+
+    public func initializeTextField(payload : ?Text, initialValue : Text) : Text {
+        switch (payload) {
+            case (?fieldValue) fieldValue;
+            case null initialValue;
+        };
+    };
+
+    public func initializeSortOrder(payload : ?Datatype.SortDirection, initialValue : Datatype.SortDirection) : Datatype.SortDirection {
+        switch (payload) {
+            case (?fieldValue) fieldValue;
+            case null initialValue;
+        };
+    };
+
+    public func initializeSortKeyDataType(payload : ?Datatype.AttributeDataType, initialValue : Datatype.AttributeDataType) : Datatype.AttributeDataType {
+        switch (payload) {
+            case (?fieldValue) fieldValue;
+            case null initialValue;
+        };
     };
 };

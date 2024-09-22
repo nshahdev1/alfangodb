@@ -5,7 +5,6 @@ import Debug "mo:base/Debug";
 import Int "mo:base/Int";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
-import Order "mo:base/Order";
 import Prelude "mo:base/Prelude";
 import Text "mo:base/Text";
 import Map "mo:map/Map";
@@ -130,8 +129,6 @@ module {
     public func paginatedScan({
         paginatedScanInput : InputTypes.PaginatedScanInputType;
         alfangoDB : Database.AlfangoDB;
-        sortKey : Text;
-        sortKeyDataType : Datatypes.AttributeDataType;
     }) : OutputTypes.PaginatedScanOutputType {
 
         // get databases
@@ -173,29 +170,24 @@ module {
             var filteredItemCount : Nat = 0;
             let filteredItemBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(limit);
 
-            let items = Map.toArrayDesc(tableItems);
+            var items : [(Database.Id, Database.Item)] = [];
+
             var sortedItems : [(Database.Id, Database.Item)] = [];
 
-            switch (sortKeyDataType) {
-                case (#nat) {
-                    sortedItems := Array.sort(
-                        items,
-                        (
-                            func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
-                                return Nat.compare(Utils.getNatKeyValue(b, sortKey), Utils.getNatKeyValue(a, sortKey)); // Sort in descending order
-                            }
-                        ),
-                    );
+            let sortDirection = Utils.initializeSortOrder(paginatedScanInput.sortDirection, #desc);
+
+            let sortKey = Utils.initializeTextField(paginatedScanInput.sortKey, "start_date");
+
+            let sortKeyDataType = Utils.initializeSortKeyDataType(paginatedScanInput.sortKeyDataType, #nat);
+
+            switch (sortDirection) {
+                case (#desc) {
+                    items := Map.toArrayDesc(tableItems);
+                    sortedItems := Utils.sortDescending(items, sortKey, sortKeyDataType);
                 };
-                case _ {
-                    sortedItems := Array.sort(
-                        items,
-                        (
-                            func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
-                                return Text.compare(Utils.getTextKeyValue(b, sortKey), Utils.getTextKeyValue(a, sortKey)); // Sort in descending order
-                            }
-                        ),
-                    );
+                case (#asc) {
+                    items := Map.toArray(tableItems);
+                    sortedItems := Utils.sortAscending(items, sortKey, sortKeyDataType);
                 };
             };
 

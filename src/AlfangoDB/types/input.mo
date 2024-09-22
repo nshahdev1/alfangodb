@@ -13,56 +13,59 @@ module {
     public type CreateTableInputType = {
         databaseName : Text;
         name : Text;
-        attributes : [ Database.AttributeMetadata ];
-        indexes : [ Database.TableIndexMetadata ];
+        attributes : [Database.AttributeMetadata];
+        indexes : [Database.TableIndexMetadata];
     };
 
     public type CreateItemInputType = {
         databaseName : Text;
         tableName : Text;
-        attributeDataValues: [ (Text, Datatypes.AttributeDataValue) ];
+        attributeDataValues : [(Text, Datatypes.AttributeDataValue)];
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public type GetTableMetadataInputType = {
-        databaseName: Text;
-        tableName: Text;
+        databaseName : Text;
+        tableName : Text;
     };
 
     public type GetItemByIdInputType = {
-        databaseName: Text;
-        tableName: Text;
-        id: Text;
+        databaseName : Text;
+        tableName : Text;
+        id : Text;
     };
 
     public type BatchGetItemByIdInputType = {
-        databaseName: Text;
-        tableName: Text;
-        ids: [ Text ];
+        databaseName : Text;
+        tableName : Text;
+        ids : [Text];
     };
 
     public type GetItemCountInputType = {
-        databaseName: Text;
-        tableName: Text;
+        databaseName : Text;
+        tableName : Text;
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public type ScanInputType = {
-        databaseName: Text;
-        tableName: Text;
-        filterExpressions: [ SearchTypes.FilterExpressionType ];
+        databaseName : Text;
+        tableName : Text;
+        filterExpressions : [SearchTypes.FilterExpressionType];
     };
 
     public type ScanAndGetIdsInputType = ScanInputType;
 
     public type PaginatedScanInputType = {
-        databaseName: Text;
-        tableName: Text;
-        filterExpressions: [ SearchTypes.FilterExpressionType ];
-        offset: Nat;
-        limit: Nat;
+        databaseName : Text;
+        tableName : Text;
+        filterExpressions : [SearchTypes.FilterExpressionType];
+        offset : Nat;
+        limit : Nat;
+        sortKey : ?Text;
+        sortKeyDataType : ?Datatypes.AttributeDataType;
+        sortDirection : ?Datatypes.SortDirection;
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -80,10 +83,10 @@ module {
     };
 
     public type UpdateItemInputType = {
-        databaseName: Text;
-        tableName: Text;
-        id: Text;
-        attributeDataValues: [ (Text, Datatypes.AttributeDataValue) ];
+        databaseName : Text;
+        tableName : Text;
+        id : Text;
+        attributeDataValues : [(Text, Datatypes.AttributeDataValue)];
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

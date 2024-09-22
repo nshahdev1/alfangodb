@@ -58,7 +58,7 @@ module {
     };
 
     public type ListAttributeDataValue = {
-        #list : [ NumericAttributeDataValue or StringAttributeDataValue ];
+        #list : [NumericAttributeDataValue or StringAttributeDataValue];
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ module {
         #bool : Bool;
         #blob : Blob;
         #principal : Principal;
-        #map : [ (Text, NumericAttributeDataValue or StringAttributeDataValue or ListAttributeDataValue) ];
+        #map : [(Text, NumericAttributeDataValue or StringAttributeDataValue or ListAttributeDataValue)];
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -84,4 +84,9 @@ module {
     public type AttributeDataValue = DefaultAttributeDataValue or NumericAttributeDataValue or StringAttributeDataValue or ListAttributeDataValue or MiscAttributeDataValue;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public type SortDirection = {
+        #asc;
+        #desc;
+    };
 };
