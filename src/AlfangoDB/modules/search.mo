@@ -1,15 +1,16 @@
+import Array "mo:base/Array";
+import Buffer "mo:base/Buffer";
+import Debug "mo:base/Debug";
+import Prelude "mo:base/Prelude";
+import Text "mo:base/Text";
+import Map "mo:map/Map";
+import { thash } "mo:map/Map";
+
 import Database "../types/database";
 import Datatypes "../types/datatype";
 import InputTypes "../types/input";
 import OutputTypes "../types/output";
 import SearchTypes "../types/search";
-import Map "mo:map/Map";
-import { thash } "mo:map/Map";
-import Debug "mo:base/Debug";
-import Prelude "mo:base/Prelude";
-import Text "mo:base/Text";
-import Array "mo:base/Array";
-import Buffer "mo:base/Buffer";
 module {
 
     type AttributeDataValue = Datatypes.AttributeDataValue;
@@ -56,7 +57,7 @@ module {
             });
 
             let filteredItemsBuffer = Buffer.Buffer<{ id : Text; item: [(Text, Datatypes.AttributeDataValue)] }>(filteredItemMap.size());
-            for (filteredItem in Map.vals(filteredItemMap)) {
+            for (filteredItem in Map.valsDesc(filteredItemMap)) {
                 filteredItemsBuffer.add({
                     id = filteredItem.id;
                     item = Map.toArray(filteredItem.attributeDataValueMap);
@@ -100,7 +101,7 @@ module {
             let tableItems = table.items;
 
             let filteredItemIdsBuffer = Buffer.Buffer<Text>(0);
-            for (item in Map.vals(tableItems)) {
+            for (item in Map.valsDesc(tableItems)) {
                 // apply filter expression
                 if (applyFilterExpression({ item; filterExpressions; })) {
                     filteredItemIdsBuffer.add(item.id)
@@ -158,7 +159,7 @@ module {
             var itemIdx : Int = -1;
             var filteredItemCount : Nat = 0;
             let filteredItemBuffer = Buffer.Buffer<{ id : Text; item: [(Text, Datatypes.AttributeDataValue)] }>(limit);
-            label items for (item in Map.vals(tableItems)) {
+            label items for (item in Map.valsDesc(tableItems)) {
                 itemIdx := itemIdx + 1;
                 Debug.print("itemIdx: " # debug_show(itemIdx) # " offset: " # debug_show(offset) # " limit: " # debug_show(limit) # " filteredItemCount: " # debug_show(filteredItemCount) # " item: " # debug_show(item.id));
                 // apply filter expression
