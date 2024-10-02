@@ -360,8 +360,6 @@ module {
         attributeDataValue : AttributeDataValue; // #list([#text("health"),#text(#"entertainment")])
         conditionAttributeDataValue : RelationalExpressionAttributeDataValue // #text("health");
     }) : Bool {
-        Debug.print("Attribute data value --> " # debug_show (attributeDataValue));
-        Debug.print("Condition data value --> " # debug_show (conditionAttributeDataValue));
 
         var areEqual = false;
         switch (conditionAttributeDataValue) {
@@ -735,6 +733,10 @@ module {
         conditionAttributeDataValue : ContaintmentExpressionAttributeDataValue;
     }) : Bool {
 
+        Debug.print("Attribute data value list --> " # debug_show (attributeDataValue));
+
+        Debug.print("Condition data value list --> " # debug_show (conditionAttributeDataValue));
+
         var contains = false;
         switch (conditionAttributeDataValue) {
             case (#text(inputDataValue)) {
@@ -749,17 +751,15 @@ module {
                     case (_) contains := false;
                 };
             };
-            case (#list(inputDataValueList)) {
+            case (#list(conditionAttributeDataValue)) {
                 switch (attributeDataValue) {
                     case (#list(attributeDataValueList)) {
-                        return Array.foldLeft<RelationalExpressionAttributeDataValue, Bool>(
-                            inputDataValueList,
-                            true,
-                            func(soFarContains, inputDataValue) = applyListFilter({
-                                attributeDataValue = inputDataValue;
-                                conditionAttributeDataValue = attributeDataValueList;
-                            }),
-                        );
+
+                        contains := applyListFilter({
+                            attributeDataValueList;
+                            conditionAttributeDataValue = conditionAttributeDataValue;
+                        })
+
                     };
                     case (_) contains := false;
                 };
@@ -770,24 +770,33 @@ module {
     };
 
     private func applyListFilter({
-        attributeDataValue : AttributeDataValue;
+        attributeDataValueList : [RelationalExpressionAttributeDataValue];
         conditionAttributeDataValue : [RelationalExpressionAttributeDataValue];
     }) : Bool {
+
         var areEqual = false;
 
-        label items for (conditionAttributeData in conditionAttributeDataValue.vals()) {
+        label items for (attributeData in attributeDataValueList.vals()) {
 
-            areEqual := applyFilterEQ({
-                attributeDataValue;
-                conditionAttributeDataValue = conditionAttributeData;
-            });
+            Debug.print("Attribute data value --> " # debug_show (attributeData));
 
-            if (areEqual) {
-                break items;
+            for (conditionAttribute in conditionAttributeDataValue.vals()) {
+                areEqual := applyFilterEQ({
+                    attributeDataValue = attributeData;
+                    conditionAttributeDataValue = conditionAttribute;
+                });
+
+                Debug.print("Are Equal --> " #debug_show (areEqual));
+
+                if (areEqual) {
+                    Debug.print("Break --> " #debug_show (areEqual));
+                    break items;
+                };
             };
 
         };
 
+        Debug.print("Loop exit --> " #debug_show (areEqual));
         return areEqual;
     };
 
@@ -795,9 +804,6 @@ module {
         attributeDataValue : AttributeDataValue; // [#text("health"),#text(#"entertainment")]
         conditionAttributeDataValue : [RelationalExpressionAttributeDataValue] // [#text("health")];
     }) : Bool {
-
-        Debug.print("Attribute data value --> " # debug_show (attributeDataValue));
-        Debug.print("Condition data value --> " # debug_show (conditionAttributeDataValue));
 
         return Array.find<RelationalExpressionAttributeDataValue>(
             conditionAttributeDataValue,
