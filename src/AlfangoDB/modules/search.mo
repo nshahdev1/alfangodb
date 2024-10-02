@@ -755,7 +755,7 @@ module {
                         return Array.foldLeft<RelationalExpressionAttributeDataValue, Bool>(
                             inputDataValueList,
                             true,
-                            func(soFarContains, inputDataValue) = soFarContains and applyFilterIN({
+                            func(soFarContains, inputDataValue) = soFarContains or applyFilterIN({
                                 attributeDataValue = inputDataValue;
                                 conditionAttributeDataValue = attributeDataValueList;
                             }),
