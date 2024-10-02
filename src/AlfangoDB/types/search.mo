@@ -15,25 +15,26 @@ module {
     public type ContaintmentExpressionAttributeDataValue = StringAttributeDataValue or ListAttributeDataValue;
 
     public type FilterExpressionConditionType = {
-        #EQ: RelationalExpressionAttributeDataValue;
-        #NEQ: RelationalExpressionAttributeDataValue;
-        #LT: RelationalExpressionAttributeDataValue;
-        #LTE: RelationalExpressionAttributeDataValue;
-        #GT: RelationalExpressionAttributeDataValue;
-        #GTE: RelationalExpressionAttributeDataValue;
-        #BEGINS_WITH: StringAttributeDataValue;
-        #CONTAINS: ContaintmentExpressionAttributeDataValue;
-        #NOT_CONTAINS: ContaintmentExpressionAttributeDataValue;
+        #EQ : RelationalExpressionAttributeDataValue;
+        #NEQ : RelationalExpressionAttributeDataValue;
+        #LT : RelationalExpressionAttributeDataValue;
+        #LTE : RelationalExpressionAttributeDataValue;
+        #GT : RelationalExpressionAttributeDataValue;
+        #GTE : RelationalExpressionAttributeDataValue;
+        #BEGINS_WITH : StringAttributeDataValue;
+        #CONTAINS : ContaintmentExpressionAttributeDataValue;
+        #NOT_CONTAINS : ContaintmentExpressionAttributeDataValue;
         #NOT_EXISTS;
         #EXISTS;
-        #IN: [ RelationalExpressionAttributeDataValue ];
-        #BETWEEN: (RelationalExpressionAttributeDataValue, RelationalExpressionAttributeDataValue);
-        #NOT_BETWEEN: (RelationalExpressionAttributeDataValue, RelationalExpressionAttributeDataValue);
+        #IN : [RelationalExpressionAttributeDataValue];
+        #LIKE : [RelationalExpressionAttributeDataValue];
+        #BETWEEN : (RelationalExpressionAttributeDataValue, RelationalExpressionAttributeDataValue);
+        #NOT_BETWEEN : (RelationalExpressionAttributeDataValue, RelationalExpressionAttributeDataValue);
     };
 
     public type FilterExpressionType = {
-        attributeName: Text;
-        filterExpressionCondition: FilterExpressionConditionType;
+        attributeName : Text;
+        filterExpressionCondition : FilterExpressionConditionType;
     };
 
 };

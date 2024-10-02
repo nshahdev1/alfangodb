@@ -339,6 +339,12 @@ module {
                     conditionAttributeDataValue;
                 });
             };
+            case (#LIKE(conditionAttributeDataValue)) {
+                return applyFilterLIKE({
+                    attributeDataValue;
+                    conditionAttributeDataValue;
+                });
+            };
             case (#BETWEEN(conditionAttributeDataValue)) {
                 return applyFilterBETWEEN({
                     attributeDataValue;
@@ -773,38 +779,24 @@ module {
         return contains;
     };
 
-    private func _applyListFilter({
-        attributeDataValueList : [RelationalExpressionAttributeDataValue];
+    private func applyFilterIN({
+        attributeDataValue : AttributeDataValue;
         conditionAttributeDataValue : [RelationalExpressionAttributeDataValue];
     }) : Bool {
 
-        var areEqual = false;
-
-        label items for (attributeData in attributeDataValueList.vals()) {
-
-            Debug.print("Attribute data value --> " # debug_show (attributeData));
-
-            for (conditionAttribute in conditionAttributeDataValue.vals()) {
-                areEqual := applyFilterEQ({
-                    attributeDataValue = attributeData;
-                    conditionAttributeDataValue = conditionAttribute;
+        return Array.find<RelationalExpressionAttributeDataValue>(
+            conditionAttributeDataValue,
+            func(conditionAttributeDataValueInValue : RelationalExpressionAttributeDataValue) : Bool {
+                applyFilterEQ({
+                    attributeDataValue;
+                    conditionAttributeDataValue = conditionAttributeDataValueInValue;
                 });
+            },
+        ) != null;
 
-                Debug.print("Are Equal --> " #debug_show (areEqual));
-
-                if (areEqual) {
-                    Debug.print("Break --> " #debug_show (areEqual));
-                    break items;
-                };
-            };
-
-        };
-
-        Debug.print("Loop exit --> " #debug_show (areEqual));
-        return areEqual;
     };
 
-    private func applyFilterIN({
+    private func applyFilterLIKE({
         attributeDataValue : AttributeDataValue;
         conditionAttributeDataValue : [RelationalExpressionAttributeDataValue];
     }) : Bool {
