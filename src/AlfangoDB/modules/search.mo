@@ -813,7 +813,7 @@ module {
 
         Debug.print("Attribute data value --> " # debug_show (attributeDataValue));
 
-        Debug.print("Condition data value --> " # debug_show (attributeDataValue));
+        Debug.print("Condition data value --> " # debug_show (conditionAttributeDataValue));
 
         label items for (conditionAttribute in conditionAttributeDataValue.vals()) {
             areEqual := applyFilterEQ({
