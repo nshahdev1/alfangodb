@@ -1,13 +1,14 @@
-import Datatypes "../types/datatype";
-import Database "../types/database";
-import Utils "../utils";
-import HashMap "mo:base/HashMap";
-import Text "mo:base/Text";
 import Buffer "mo:base/Buffer";
 import Debug "mo:base/Debug";
+import HashMap "mo:base/HashMap";
+import Text "mo:base/Text";
 import Map "mo:map/Map";
-import Set "mo:map/Set";
 import { thash } "mo:map/Map";
+import Set "mo:map/Set";
+
+import Database "../types/database";
+import Datatypes "../types/datatype";
+import Utils "../utils";
 
 module {
 
@@ -18,30 +19,34 @@ module {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public func unwrapAttributeDataValue({ attributeDataValue : AttributeDataValue }) : (AttributeDataType) {
+    public func unwrapAttributeDataValue({
+        attributeDataValue : AttributeDataValue;
+    }) : (AttributeDataType) {
 
         var unwrappedAttributeDataType : AttributeDataType = #default;
 
         switch (attributeDataValue) {
-            case (#int(intValue)) { unwrappedAttributeDataType := #int; };
-            case (#int8(int8Value)) { unwrappedAttributeDataType := #int8; };
-            case (#int16(int16Value)) { unwrappedAttributeDataType := #int16; };
-            case (#int32(int32Value)) { unwrappedAttributeDataType := #int32; };
-            case (#int64(int64Value)) { unwrappedAttributeDataType := #int64; };
-            case (#nat(natValue)) { unwrappedAttributeDataType := #nat; };
-            case (#nat8(nat8Value)) { unwrappedAttributeDataType := #nat8; };
-            case (#nat16(nat16Value)) { unwrappedAttributeDataType := #nat16; };
-            case (#nat32(nat32Value)) { unwrappedAttributeDataType := #nat32; };
-            case (#nat64(nat64Value)) { unwrappedAttributeDataType := #nat64; };
-            case (#float(floatValue)) { unwrappedAttributeDataType := #float; };
-            case (#text(textValue)) { unwrappedAttributeDataType := #text; };
-            case (#char(charValue)) { unwrappedAttributeDataType := #char; };
-            case (#bool(boolValue)) { unwrappedAttributeDataType := #bool; };
-            case (#principal(principalValue)) { unwrappedAttributeDataType := #principal; };
-            case (#blob(blobValue)) { unwrappedAttributeDataType := #blob; };
-            case (#list(listValue)) { unwrappedAttributeDataType := #list; };
-            case (#map(mapValue)) { unwrappedAttributeDataType := #map; };
-            case (#default) { unwrappedAttributeDataType := #default; };
+            case (#int(_intValue)) { unwrappedAttributeDataType := #int };
+            case (#int8(_int8Value)) { unwrappedAttributeDataType := #int8 };
+            case (#int16(_int16Value)) { unwrappedAttributeDataType := #int16 };
+            case (#int32(_int32Value)) { unwrappedAttributeDataType := #int32 };
+            case (#int64(_int64Value)) { unwrappedAttributeDataType := #int64 };
+            case (#nat(_natValue)) { unwrappedAttributeDataType := #nat };
+            case (#nat8(_nat8Value)) { unwrappedAttributeDataType := #nat8 };
+            case (#nat16(_nat16Value)) { unwrappedAttributeDataType := #nat16 };
+            case (#nat32(_nat32Value)) { unwrappedAttributeDataType := #nat32 };
+            case (#nat64(_nat64Value)) { unwrappedAttributeDataType := #nat64 };
+            case (#float(_floatValue)) { unwrappedAttributeDataType := #float };
+            case (#text(_textValue)) { unwrappedAttributeDataType := #text };
+            case (#char(_charValue)) { unwrappedAttributeDataType := #char };
+            case (#bool(_boolValue)) { unwrappedAttributeDataType := #bool };
+            case (#principal(_principalValue)) {
+                unwrappedAttributeDataType := #principal;
+            };
+            case (#blob(_blobValue)) { unwrappedAttributeDataType := #blob };
+            case (#list(_listValue)) { unwrappedAttributeDataType := #list };
+            case (#map(_mapValue)) { unwrappedAttributeDataType := #map };
+            case (#default) { unwrappedAttributeDataType := #default };
         };
 
         return (unwrappedAttributeDataType);
@@ -49,12 +54,17 @@ module {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public func validateAttributeDataType({ attributeDataValue : AttributeDataValue; expectedAttributeDataType : AttributeDataType }) : {
+    public func validateAttributeDataType({
+        attributeDataValue : AttributeDataValue;
+        expectedAttributeDataType : AttributeDataType;
+    }) : {
         isValidAttributeDataType : Bool;
         actualAttributeDataType : AttributeDataType;
     } {
 
-        let actualAttributeDataType = unwrapAttributeDataValue({ attributeDataValue; });
+        let actualAttributeDataType = unwrapAttributeDataValue({
+            attributeDataValue;
+        });
 
         return {
             isValidAttributeDataType = (actualAttributeDataType == expectedAttributeDataType);
@@ -79,7 +89,9 @@ module {
 
             if (attributeExistInTable) {
                 var expectedAttributeDataType : Datatypes.AttributeDataType = #default;
-                ignore do ?{ expectedAttributeDataType := Map.get(attributeNameToMetadataMap, thash, attributeName)!.dataType };
+                ignore do ? {
+                    expectedAttributeDataType := Map.get(attributeNameToMetadataMap, thash, attributeName)!.dataType;
+                };
                 let {
                     isValidAttributeDataType;
                     actualAttributeDataType;
@@ -90,11 +102,11 @@ module {
 
                 if (not isValidAttributeDataType) {
                     invalidAttributes.add(attributeName);
-                    Debug.print("attribute: " # debug_show(attributeName) # " has invalid data type: " # debug_show(actualAttributeDataType));
-                }
+                    Debug.print("attribute: " # debug_show (attributeName) # " has invalid data type: " # debug_show (actualAttributeDataType));
+                };
             } else {
                 unwantedAttributes.add(attributeName);
-                Debug.print("attribute: " # debug_show(attributeName) # " is not in table");
+                Debug.print("attribute: " # debug_show (attributeName) # " is not in table");
             };
         };
 
@@ -114,11 +126,11 @@ module {
         let indexItems = indexTable.items;
 
         var isValidUniqueAttribute = true;
-        ignore do ?{
+        ignore do ? {
             let idSet = Map.get(indexItems, Utils.DataTypeValueHashUtils, attributeDataValue)!;
             if (Set.size(idSet) > 0) {
                 isValidUniqueAttribute := false;
-                Debug.print("attribute: " # debug_show(attributeKeyDataValue) # " is not unique");
+                Debug.print("attribute: " # debug_show (attributeKeyDataValue) # " is not unique");
             };
         };
 
@@ -128,11 +140,11 @@ module {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public func validateUniqueAttributes({
-        attributeKeyDataValues: [ (Text, Datatypes.AttributeDataValue) ];
-        indexes: Map.Map<Text, Database.IndexTable>;
-        tableMetadata: Database.TableMetadata;
+        attributeKeyDataValues : [(Text, Datatypes.AttributeDataValue)];
+        indexes : Map.Map<Text, Database.IndexTable>;
+        tableMetadata : Database.TableMetadata;
     }) : {
-        invalidUnquieAttributes : [ Text ];
+        invalidUnquieAttributes : [Text];
         uniqueAttributesUnique : Bool;
     } {
 
@@ -146,7 +158,7 @@ module {
             };
 
             let attributeName = attributeMetadata.name;
-            ignore do ?{
+            ignore do ? {
                 let attributeValue = attributeDataValueMap.get(attributeName)!;
                 let isValidUniqueAttribute = validateUniqueAttribute({
                     attributeKeyDataValue = (attributeName, attributeValue);

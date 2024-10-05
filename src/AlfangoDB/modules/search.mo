@@ -134,7 +134,14 @@ module {
         // get databases
         let databases = alfangoDB.databases;
 
-        let { databaseName; tableName; filterExpressions; limit; offset } = paginatedScanInput;
+        let {
+            databaseName;
+            tableName;
+            filterExpressions;
+            limit;
+            offset;
+            searchValue;
+        } = paginatedScanInput;
 
         // check if database exists
         if (not Map.has(databases, thash, databaseName)) {
@@ -172,8 +179,16 @@ module {
 
             var items : [(Database.Id, Database.Item)] = [];
 
+            // Iterator containing sorted and searched items
+            var itemsIter = Iter.fromArray(items);
+
+            // Iterator containing sorted items
             var sortedItems : [(Database.Id, Database.Item)] = [];
 
+            // Buffer containing matching search items
+            let matchingSearchItemBuffer = Buffer.Buffer<(Database.Id, Database.Item)>(0);
+
+            // Sort logic
             switch (paginatedScanInput.sortKey) {
                 case (?sortKey) {
                     let sortDirection = Utils.initializeSortOrder(paginatedScanInput.sortDirection, #desc);
@@ -196,10 +211,41 @@ module {
                 case null sortedItems := Map.toArrayDesc(tableItems);
             };
 
-            let sortedItemsIter = Iter.fromArray(sortedItems);
-            let sortedItemsMap = Map.fromIter<Database.Id, Database.Item>(sortedItemsIter, thash);
+            // Global Search Logic
+            if (Text.size(searchValue) > 0) {
+                label searchItems for (sortedItem in sortedItems.vals()) {
+                    let itemObject = sortedItem.1;
+                    let attributeDataValueMap = itemObject.attributeDataValueMap;
+                    let itemIterator = Map.vals(attributeDataValueMap);
 
-            label items for (item in Map.vals(sortedItemsMap)) {
+                    label searchItemAttributeDataValueMap for (item in itemIterator) {
+                        let attributeDataValue = Utils.getAttributeDataValue({
+                            attributeDataValue = item;
+                        });
+
+                        let exists = applyFilterCONTAINS({
+                            attributeDataValue = #text(attributeDataValue);
+                            conditionAttributeDataValue = #text(searchValue);
+                        });
+
+                        if (exists) {
+                            matchingSearchItemBuffer.add(sortedItem);
+                            break searchItemAttributeDataValueMap;
+                        };
+                    };
+                };
+
+                let matchingSearchItemsArray = Buffer.toArray(matchingSearchItemBuffer);
+
+                itemsIter := Iter.fromArray(matchingSearchItemsArray);
+            } else {
+                itemsIter := Iter.fromArray(sortedItems);
+            };
+
+            // Filter logic
+            let itemsMap = Map.fromIter<Database.Id, Database.Item>(itemsIter, thash);
+
+            label items for (item in Map.vals(itemsMap)) {
                 itemIdx := itemIdx + 1;
                 Debug.print("itemIdx: " # debug_show (itemIdx) # " offset: " # debug_show (offset) # " limit: " # debug_show (limit) # " filteredItemCount: " # debug_show (filteredItemCount) # " item: " # debug_show (item.id));
                 // apply filter expression
@@ -220,6 +266,7 @@ module {
                         };
                     };
                 };
+
             };
 
             return #ok({
@@ -740,10 +787,6 @@ module {
         attributeDataValue : AttributeDataValue;
         conditionAttributeDataValue : ContaintmentExpressionAttributeDataValue;
     }) : Bool {
-
-        Debug.print("Attribute data value list --> " # debug_show (attributeDataValue));
-
-        Debug.print("Condition data value list --> " # debug_show (conditionAttributeDataValue));
 
         var contains = false;
         switch (conditionAttributeDataValue) {
