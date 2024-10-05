@@ -211,8 +211,9 @@ module {
                 case null sortedItems := Map.toArrayDesc(tableItems);
             };
 
+            let searchValueText = Utils.initializeTextField(searchValue, "");
             // Global Search Logic
-            if (Text.size(searchValue) > 0) {
+            if (Text.size(searchValueText) > 0) {
                 label searchItems for (sortedItem in sortedItems.vals()) {
                     let itemObject = sortedItem.1;
                     let attributeDataValueMap = itemObject.attributeDataValueMap;
@@ -225,7 +226,7 @@ module {
 
                         let exists = applyFilterCONTAINS({
                             attributeDataValue = #text(attributeDataValue);
-                            conditionAttributeDataValue = #text(searchValue);
+                            conditionAttributeDataValue = #text(searchValueText);
                         });
 
                         if (exists) {

@@ -66,7 +66,7 @@ module {
         sortKey : ?Text;
         sortKeyDataType : ?Datatypes.AttributeDataType;
         sortDirection : ?Datatypes.SortDirection;
-        searchValue : Text;
+        searchValue : ?Text;
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
