@@ -225,8 +225,8 @@ module {
                         });
 
                         let exists = applyFilterCONTAINS({
-                            attributeDataValue = #text(attributeDataValue);
-                            conditionAttributeDataValue = #text(searchValueText);
+                            attributeDataValue = #text(Text.toLowercase(attributeDataValue));
+                            conditionAttributeDataValue = #text(Text.toLowercase(searchValueText));
                         });
 
                         if (exists) {
