@@ -411,8 +411,8 @@ module {
     };
 
     private func applyFilterEQ({
-        attributeDataValue : AttributeDataValue; // #list([#text("health"),#text(#"entertainment")])
-        conditionAttributeDataValue : RelationalExpressionAttributeDataValue // #text("health");
+        attributeDataValue : AttributeDataValue;
+        conditionAttributeDataValue : RelationalExpressionAttributeDataValue;
     }) : Bool {
 
         var areEqual = false;
