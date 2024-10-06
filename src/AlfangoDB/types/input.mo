@@ -63,8 +63,8 @@ module {
         filterExpressions : [SearchTypes.FilterExpressionType];
         offset : Nat;
         limit : Nat;
-        sortObject : SortInputType;
-        searchObject : SearchInputType;
+        sortObject : ?SortInputType;
+        searchObject : ?SearchInputType;
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -124,7 +124,7 @@ module {
 
     public type SearchInputType = {
         searchValue : ?Text;
-        foreignKeys : [ForeignKeyInputType];
+        foreignKeys : ?[ForeignKeyInputType];
     };
 
     public type ForeignKeyInputType = {

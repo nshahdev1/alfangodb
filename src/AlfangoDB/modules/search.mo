@@ -179,13 +179,20 @@ module {
             let filteredItemBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(limit);
 
             // Sort logic
-            let sortedItems = applySorting({ sortObject; tableItems });
+            let sortPayload = Utils.initializeSortObject(sortObject);
+
+            let sortedItems = applySorting({
+                sortObject = sortPayload;
+                tableItems;
+            });
+
+            let searchPayload = Utils.initializeSearchObject(searchObject);
 
             // Global Search Logic
             let itemsIterator = applyGlobalSearch({
                 alfangoDB;
                 databaseName;
-                searchObject;
+                searchObject = searchPayload;
                 sortedItems;
             });
 
@@ -312,56 +319,63 @@ module {
 
                         let foreignKeyArray = searchObject.foreignKeys;
 
-                        label foreignKeySearchItems for (foreignKeyItem in foreignKeyArray.vals()) {
-                            ignore do ? {
-                                let database = Map.get(databases, thash, databaseName)!;
+                        switch (foreignKeyArray) {
+                            case (?foreignKeyArray) {
+                                label foreignKeySearchItems for (foreignKeyItem in foreignKeyArray.vals()) {
+                                    ignore do ? {
+                                        let database = Map.get(databases, thash, databaseName)!;
 
-                                let table = Map.get(database.tables, thash, foreignKeyItem.primaryKeyTableName)!;
+                                        let table = Map.get(database.tables, thash, foreignKeyItem.primaryKeyTableName)!;
 
-                                let tableItems = table.items;
+                                        let tableItems = table.items;
 
-                                let foreignKeyItemId = Utils.getTextKeyValue(sortedItem, foreignKeyItem.foreignKeyName);
+                                        let foreignKeyItemId = Utils.getTextKeyValue(sortedItem, foreignKeyItem.foreignKeyName);
 
-                                label allParentTableItems for (itemObject in Map.toArray(tableItems).vals()) {
+                                        label allParentTableItems for (itemObject in Map.toArray(tableItems).vals()) {
 
-                                    let parentTableItem = itemObject.1;
-                                    let parentTableId = parentTableItem.id;
+                                            let parentTableItem = itemObject.1;
+                                            let parentTableId = parentTableItem.id;
 
-                                    if (parentTableId == foreignKeyItemId) {
-                                        let attributeDataValueMap = parentTableItem.attributeDataValueMap;
-                                        let itemIterator = Map.vals(attributeDataValueMap);
+                                            if (parentTableId == foreignKeyItemId) {
+                                                let attributeDataValueMap = parentTableItem.attributeDataValueMap;
+                                                let itemIterator = Map.vals(attributeDataValueMap);
 
-                                        label parentTableSingleItem for (item in itemIterator) {
-                                            let attributeDataValue = Utils.getAttributeDataValue({
-                                                attributeDataValue = item;
-                                            });
+                                                label parentTableSingleItem for (item in itemIterator) {
+                                                    let attributeDataValue = Utils.getAttributeDataValue({
+                                                        attributeDataValue = item;
+                                                    });
 
-                                            exists := applyFilterCONTAINS({
-                                                attributeDataValue = #text(Text.toLowercase(attributeDataValue));
-                                                conditionAttributeDataValue = #text(Text.toLowercase(searchValueText));
-                                            });
+                                                    exists := applyFilterCONTAINS({
+                                                        attributeDataValue = #text(Text.toLowercase(attributeDataValue));
+                                                        conditionAttributeDataValue = #text(Text.toLowercase(searchValueText));
+                                                    });
 
-                                            if (exists) {
-                                                matchingSearchItemBuffer.add(sortedItem);
-                                                break parentTableSingleItem;
+                                                    if (exists) {
+                                                        matchingSearchItemBuffer.add(sortedItem);
+                                                        break parentTableSingleItem;
+                                                    };
+                                                };
+
+                                                break allParentTableItems;
+
                                             };
+
                                         };
 
-                                        break allParentTableItems;
-
+                                        if (exists) {
+                                            break foreignKeySearchItems;
+                                        };
                                     };
-
                                 };
 
                                 if (exists) {
-                                    break foreignKeySearchItems;
+                                    break searchItemAttributeDataValueMap;
                                 };
                             };
+
+                            case null ();
                         };
 
-                        if (exists) {
-                            break searchItemAttributeDataValueMap;
-                        };
                     };
                 };
             };

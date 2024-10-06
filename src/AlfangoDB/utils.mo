@@ -39,6 +39,7 @@ import ULIDAsyncSource "mo:ulid/async/Source";
 import ULIDSource "mo:ulid/Source";
 import ULID "mo:ulid/ULID";
 
+import InputTypes "/types/input";
 import Database "types/database";
 import Datatypes "types/datatype";
 import Datatype "types/datatype";
@@ -514,7 +515,55 @@ module {
         return sortedItems;
     };
 
+    public func initializeSortObject(payload : ?InputTypes.SortInputType) : InputTypes.SortInputType {
+
+        switch (payload) {
+            case (?sortObject) {
+                return {
+                    sortKey = sortObject.sortKey;
+                    sortKeyDataType = sortObject.sortKeyDataType;
+                    sortDirection = sortObject.sortDirection;
+                };
+            };
+            case null {
+                return {
+                    sortKey = null;
+                    sortKeyDataType = ? #nat;
+                    sortDirection = ? #desc;
+                };
+            };
+        };
+
+    };
+
+    public func initializeSearchObject(payload : ?InputTypes.SearchInputType) : InputTypes.SearchInputType {
+
+        switch (payload) {
+            case (?searchObject) {
+                return {
+                    searchValue = searchObject.searchValue;
+                    foreignKeys = searchObject.foreignKeys;
+
+                };
+            };
+            case null {
+                return {
+                    searchValue = null;
+                    foreignKeys = ?[];
+                };
+            };
+        };
+
+    };
+
     public func initializeTextField(payload : ?Text, initialValue : Text) : Text {
+        switch (payload) {
+            case (?fieldValue) fieldValue;
+            case null initialValue;
+        };
+    };
+
+    public func initializeTextArrayField(payload : ?[Text], initialValue : [Text]) : [Text] {
         switch (payload) {
             case (?fieldValue) fieldValue;
             case null initialValue;
