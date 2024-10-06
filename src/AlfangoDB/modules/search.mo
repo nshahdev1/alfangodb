@@ -140,7 +140,7 @@ module {
             filterExpressions;
             limit;
             offset;
-            searchValue;
+            searchObject;
             sortObject;
         } = paginatedScanInput;
 
@@ -182,7 +182,12 @@ module {
             let sortedItems = applySorting({ sortObject; tableItems });
 
             // Global Search Logic
-            let itemsIterator = applyGlobalSearch({ searchValue; sortedItems });
+            let itemsIterator = applyGlobalSearch({
+                alfangoDB;
+                databaseName;
+                searchObject;
+                sortedItems;
+            });
 
             // Filter logic
             let itemsMap = Map.fromIter<Database.Id, Database.Item>(itemsIterator, thash);
@@ -256,9 +261,13 @@ module {
     };
 
     private func applyGlobalSearch({
-        searchValue : ?Text;
+        alfangoDB : Database.AlfangoDB;
+        databaseName : Text;
+        searchObject : InputTypes.SearchInputType;
         sortedItems : OutputTypes.ItemArrayOutputType;
     }) : OutputTypes.ItemIteratorOutputType {
+
+        let databases = alfangoDB.databases;
 
         // Iterator containing sorted items
         var itemsIter = Iter.fromArray(sortedItems);
@@ -266,7 +275,7 @@ module {
         // Buffer containing matching search items
         let matchingSearchItemBuffer = Buffer.Buffer<(Database.Id, Database.Item)>(0);
 
-        let searchValueText = Utils.initializeTextField(searchValue, "");
+        let searchValueText = Utils.initializeTextField(searchObject.searchValue, "");
 
         let performSearch = Text.size(searchValueText) > 0;
 
@@ -292,10 +301,67 @@ module {
                         break searchItemAttributeDataValueMap;
                     } else {
                         // add attributes named foreignKeyName and primaryKeyTableName
+
                         // search the record(using id field of primaryKeyTable) for foreignKeyName in primaryKeyTableName
+
                         // If record exists, match with all values of the record. If there is a match, insert the sortedItem to buffer and break
+
                         // If the record does not exist, do nothing and exit
 
+                        var exists = false;
+
+                        let foreignKeyArray = searchObject.foreignKeys;
+
+                        label foreignKeySearchItems for (foreignKeyItem in foreignKeyArray.vals()) {
+                            ignore do ? {
+                                let database = Map.get(databases, thash, databaseName)!;
+
+                                let table = Map.get(database.tables, thash, foreignKeyItem.primaryKeyTableName)!;
+
+                                let tableItems = table.items;
+
+                                let foreignKeyItemId = Utils.getTextKeyValue(sortedItem, foreignKeyItem.foreignKeyName);
+
+                                label allParentTableItems for (itemObject in Map.toArray(tableItems).vals()) {
+
+                                    let parentTableItem = itemObject.1;
+                                    let parentTableId = parentTableItem.id;
+
+                                    if (parentTableId == foreignKeyItemId) {
+                                        let attributeDataValueMap = parentTableItem.attributeDataValueMap;
+                                        let itemIterator = Map.vals(attributeDataValueMap);
+
+                                        label parentTableSingleItem for (item in itemIterator) {
+                                            let attributeDataValue = Utils.getAttributeDataValue({
+                                                attributeDataValue = item;
+                                            });
+
+                                            exists := applyFilterCONTAINS({
+                                                attributeDataValue = #text(Text.toLowercase(attributeDataValue));
+                                                conditionAttributeDataValue = #text(Text.toLowercase(searchValueText));
+                                            });
+
+                                            if (exists) {
+                                                matchingSearchItemBuffer.add(sortedItem);
+                                                break parentTableSingleItem;
+                                            };
+                                        };
+
+                                        break allParentTableItems;
+
+                                    };
+
+                                };
+
+                                if (exists) {
+                                    break foreignKeySearchItems;
+                                };
+                            };
+                        };
+
+                        if (exists) {
+                            break searchItemAttributeDataValueMap;
+                        };
                     };
                 };
             };

@@ -64,7 +64,7 @@ module {
         offset : Nat;
         limit : Nat;
         sortObject : SortInputType;
-        searchValue : ?Text;
+        searchObject : SearchInputType;
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,4 +122,13 @@ module {
         sortDirection : ?Datatypes.SortDirection;
     };
 
+    public type SearchInputType = {
+        searchValue : ?Text;
+        foreignKeys : [ForeignKeyInputType];
+    };
+
+    public type ForeignKeyInputType = {
+        foreignKeyName : Text;
+        primaryKeyTableName : Text;
+    };
 };
