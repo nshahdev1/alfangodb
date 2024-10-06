@@ -1,70 +1,64 @@
-import Datatypes "datatype";
-import Database "database";
 import Result "mo:base/Result";
+
+import Database "database";
+import Datatypes "datatype";
 
 module {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public type CreateDatabaseOutputType = Result.Result<{}, [ Text ]>;
+    public type CreateDatabaseOutputType = Result.Result<{}, [Text]>;
 
-    public type CreateTableOutputType = Result.Result<{}, [ Text ]>;
+    public type CreateTableOutputType = Result.Result<{}, [Text]>;
 
-    public type CreateItemOutputType = Result.Result<{ id : Text; item: [ (Text, Datatypes.AttributeDataValue) ] }, [ Text ]>;
+    public type CreateItemOutputType = Result.Result<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }, [Text]>;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public type TableMetadataOutputType = {
-        attributes : [ Database.AttributeMetadata ];
-        indexes : [ Database.TableIndexMetadata ];
+        attributes : [Database.AttributeMetadata];
+        indexes : [Database.TableIndexMetadata];
     };
 
     public type GetTableMetadataOutputType = ?{
-        databaseName: Text;
-        tableName: Text;
+        databaseName : Text;
+        tableName : Text;
         metadata : TableMetadataOutputType;
     };
 
-    public type ItemOutputType = { id : Text; item: [ (Text, Datatypes.AttributeDataValue) ]; };
+    public type ItemOutputType = {
+        id : Text;
+        item : [(Text, Datatypes.AttributeDataValue)];
+    };
 
-    public type GetItemByIdOutputType = Result.Result<ItemOutputType, [ Text ]>;
+    public type GetItemByIdOutputType = Result.Result<ItemOutputType, [Text]>;
 
-    public type BatchGetItemByIdOutputType = Result.Result<{
-        items: [ ItemOutputType ];
-        notFoundIds: [ Text ];
-    }, [ Text ]>;
+    public type BatchGetItemByIdOutputType = Result.Result<{ items : [ItemOutputType]; notFoundIds : [Text] }, [Text]>;
 
-    public type GetItemCountOutputType = Result.Result<{ count: Int }, [ Text ]>;
+    public type GetItemCountOutputType = Result.Result<{ count : Int }, [Text]>;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public type ScanOutputType = Result.Result<[{ id : Text; item: [ (Text, Datatypes.AttributeDataValue) ] }], [ Text ]>;
+    public type ScanOutputType = Result.Result<[{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }], [Text]>;
 
-    public type ScanAndGetIdsOutputType = Result.Result<{ ids: [ Text ] }, [ Text ]>;
+    public type ScanAndGetIdsOutputType = Result.Result<{ ids : [Text] }, [Text]>;
 
-    public type PaginatedScanOutputType = Result.Result<
-    {
-        items: [{ id : Text; item: [ (Text, Datatypes.AttributeDataValue) ] }];
-        offset: Nat;
-        limit: Nat;
-        scannedItemCount: Int;
-        nonScannedItemCount: Int;
-    }, [ Text ]>;
+    public type PaginatedScanOutputType = Result.Result<{ items : [{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }]; offset : Nat; limit : Nat; scannedItemCount : Int; nonScannedItemCount : Int }, [Text]>;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////    
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public type AddAttributeOutputType = Result.Result<{ databaseName : Text; tableName : Text; attributeName : Text; }, [ Text ]>;
+    public type AddAttributeOutputType = Result.Result<{ databaseName : Text; tableName : Text; attributeName : Text }, [Text]>;
 
-    public type DropAttributeOutputType = Result.Result<{ databaseName : Text; tableName : Text; attributeName : Text; }, [ Text ]>;
+    public type DropAttributeOutputType = Result.Result<{ databaseName : Text; tableName : Text; attributeName : Text }, [Text]>;
 
-    public type UpdateItemOutputType = Result.Result<{ id : Text; item: [ (Text, Datatypes.AttributeDataValue) ] }, [ Text ]>;
+    public type UpdateItemOutputType = Result.Result<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }, [Text]>;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public type GetDatabasesOutputType = {
         databases : [{
             name : Text;
-            tables : [ Text ];
+            tables : [Text];
         }];
     };
 
@@ -88,6 +82,14 @@ module {
         #ScanAndGetIdsOutput : ScanAndGetIdsOutputType;
         #PaginatedScanOutput : PaginatedScanOutputType;
         #GetDatabasesOutput : GetDatabasesOutputType;
+    };
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public type ItemArrayOutputType = [(Database.Id, Database.Item)];
+
+    public type ItemIteratorOutputType = {
+        next : () -> ?(Database.Id, Database.Item);
     };
 
 };

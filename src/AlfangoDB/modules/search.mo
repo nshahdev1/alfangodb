@@ -141,6 +141,7 @@ module {
             limit;
             offset;
             searchValue;
+            sortObject;
         } = paginatedScanInput;
 
         // check if database exists
@@ -177,74 +178,14 @@ module {
             var filteredItemCount : Nat = 0;
             let filteredItemBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(limit);
 
-            var items : [(Database.Id, Database.Item)] = [];
-
-            // Iterator containing sorted and searched items
-            var itemsIter = Iter.fromArray(items);
-
-            // Iterator containing sorted items
-            var sortedItems : [(Database.Id, Database.Item)] = [];
-
-            // Buffer containing matching search items
-            let matchingSearchItemBuffer = Buffer.Buffer<(Database.Id, Database.Item)>(0);
-
             // Sort logic
-            switch (paginatedScanInput.sortKey) {
-                case (?sortKey) {
-                    let sortDirection = Utils.initializeSortOrder(paginatedScanInput.sortDirection, #desc);
+            let sortedItems = applySorting({ sortObject; tableItems });
 
-                    let sortKeyDataType = Utils.initializeSortKeyDataType(paginatedScanInput.sortKeyDataType, #nat);
-
-                    switch (sortDirection) {
-                        case (#desc) {
-                            items := Map.toArrayDesc(tableItems);
-                            sortedItems := Utils.sortDescending(items, sortKey, sortKeyDataType);
-                        };
-                        case (#asc) {
-                            items := Map.toArray(tableItems);
-                            sortedItems := Utils.sortAscending(items, sortKey, sortKeyDataType);
-                        };
-                    };
-
-                };
-
-                case null sortedItems := Map.toArrayDesc(tableItems);
-            };
-
-            let searchValueText = Utils.initializeTextField(searchValue, "");
             // Global Search Logic
-            if (Text.size(searchValueText) > 0) {
-                label searchItems for (sortedItem in sortedItems.vals()) {
-                    let itemObject = sortedItem.1;
-                    let attributeDataValueMap = itemObject.attributeDataValueMap;
-                    let itemIterator = Map.vals(attributeDataValueMap);
-
-                    label searchItemAttributeDataValueMap for (item in itemIterator) {
-                        let attributeDataValue = Utils.getAttributeDataValue({
-                            attributeDataValue = item;
-                        });
-
-                        let exists = applyFilterCONTAINS({
-                            attributeDataValue = #text(Text.toLowercase(attributeDataValue));
-                            conditionAttributeDataValue = #text(Text.toLowercase(searchValueText));
-                        });
-
-                        if (exists) {
-                            matchingSearchItemBuffer.add(sortedItem);
-                            break searchItemAttributeDataValueMap;
-                        };
-                    };
-                };
-
-                let matchingSearchItemsArray = Buffer.toArray(matchingSearchItemBuffer);
-
-                itemsIter := Iter.fromArray(matchingSearchItemsArray);
-            } else {
-                itemsIter := Iter.fromArray(sortedItems);
-            };
+            let itemsIterator = applyGlobalSearch({ searchValue; sortedItems });
 
             // Filter logic
-            let itemsMap = Map.fromIter<Database.Id, Database.Item>(itemsIter, thash);
+            let itemsMap = Map.fromIter<Database.Id, Database.Item>(itemsIterator, thash);
 
             label items for (item in Map.vals(itemsMap)) {
                 itemIdx := itemIdx + 1;
@@ -280,6 +221,92 @@ module {
         };
 
         Prelude.unreachable();
+    };
+
+    private func applySorting({
+        sortObject : InputTypes.SortInputType;
+        tableItems : Map.Map<Text, Database.Item>;
+    }) : OutputTypes.ItemArrayOutputType {
+
+        var sortedItems : OutputTypes.ItemArrayOutputType = [];
+
+        switch (sortObject.sortKey) {
+            case (?sortKey) {
+                let sortDirection = Utils.initializeSortOrder(sortObject.sortDirection, #desc);
+
+                let sortKeyDataType = Utils.initializeSortKeyDataType(sortObject.sortKeyDataType, #nat);
+
+                switch (sortDirection) {
+                    case (#desc) {
+                        let items = Map.toArrayDesc(tableItems);
+                        sortedItems := Utils.sortDescending(items, sortKey, sortKeyDataType);
+                    };
+                    case (#asc) {
+                        let items = Map.toArray(tableItems);
+                        sortedItems := Utils.sortAscending(items, sortKey, sortKeyDataType);
+                    };
+                };
+
+            };
+
+            case null sortedItems := Map.toArrayDesc(tableItems);
+        };
+
+        return sortedItems;
+    };
+
+    private func applyGlobalSearch({
+        searchValue : ?Text;
+        sortedItems : OutputTypes.ItemArrayOutputType;
+    }) : OutputTypes.ItemIteratorOutputType {
+
+        // Iterator containing sorted items
+        var itemsIter = Iter.fromArray(sortedItems);
+
+        // Buffer containing matching search items
+        let matchingSearchItemBuffer = Buffer.Buffer<(Database.Id, Database.Item)>(0);
+
+        let searchValueText = Utils.initializeTextField(searchValue, "");
+
+        let performSearch = Text.size(searchValueText) > 0;
+
+        // Global Search Logic
+        if (performSearch) {
+            label searchItems for (sortedItem in sortedItems.vals()) {
+                let itemObject = sortedItem.1;
+                let attributeDataValueMap = itemObject.attributeDataValueMap;
+                let itemIterator = Map.vals(attributeDataValueMap);
+
+                label searchItemAttributeDataValueMap for (item in itemIterator) {
+                    let attributeDataValue = Utils.getAttributeDataValue({
+                        attributeDataValue = item;
+                    });
+
+                    let exists = applyFilterCONTAINS({
+                        attributeDataValue = #text(Text.toLowercase(attributeDataValue));
+                        conditionAttributeDataValue = #text(Text.toLowercase(searchValueText));
+                    });
+
+                    if (exists) {
+                        matchingSearchItemBuffer.add(sortedItem);
+                        break searchItemAttributeDataValueMap;
+                    } else {
+                        // add attributes named foreignKeyName and primaryKeyTableName
+                        // search the record(using id field of primaryKeyTable) for foreignKeyName in primaryKeyTableName
+                        // If record exists, match with all values of the record. If there is a match, insert the sortedItem to buffer and break
+                        // If the record does not exist, do nothing and exit
+
+                    };
+                };
+            };
+
+            let matchingSearchItemsArray = Buffer.toArray(matchingSearchItemBuffer);
+
+            // Iterator containing searched items
+            itemsIter := Iter.fromArray(matchingSearchItemsArray);
+        };
+
+        return itemsIter;
     };
 
     private func applyFilterExpression({

@@ -63,9 +63,7 @@ module {
         filterExpressions : [SearchTypes.FilterExpressionType];
         offset : Nat;
         limit : Nat;
-        sortKey : ?Text;
-        sortKeyDataType : ?Datatypes.AttributeDataType;
-        sortDirection : ?Datatypes.SortDirection;
+        sortObject : SortInputType;
         searchValue : ?Text;
     };
 
@@ -114,6 +112,14 @@ module {
         #ScanAndGetIdsInput : ScanAndGetIdsInputType;
         #PaginatedScanInput : PaginatedScanInputType;
         #GetDatabasesInput : GetDatabasesInputType;
+    };
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public type SortInputType = {
+        sortKey : ?Text;
+        sortKeyDataType : ?Datatypes.AttributeDataType;
+        sortDirection : ?Datatypes.SortDirection;
     };
 
 };
