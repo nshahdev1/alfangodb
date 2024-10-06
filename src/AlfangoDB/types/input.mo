@@ -57,6 +57,16 @@ module {
 
     public type ScanAndGetIdsInputType = ScanInputType;
 
+    public type ScanWithSearchAndSortInputType = {
+        databaseName : Text;
+        tableName : Text;
+        filterExpressions : [SearchTypes.FilterExpressionType];
+        sortObject : ?SortInputType;
+        searchObject : ?SearchInputType;
+    };
+
+    public type ScanAndGetIdsWithSearchAndSortInputType = ScanWithSearchAndSortInputType;
+
     public type PaginatedScanInputType = {
         databaseName : Text;
         tableName : Text;

@@ -126,6 +126,145 @@ module {
         Prelude.unreachable();
     };
 
+    public func scanUsingGlobalSearchAndSort({
+        scanInput : InputTypes.ScanWithSearchAndSortInputType;
+        alfangoDB : Database.AlfangoDB;
+    }) : OutputTypes.ScanOutputType {
+
+        // get databases
+        let databases = alfangoDB.databases;
+
+        let { databaseName; tableName; filterExpressions } = scanInput;
+
+        // check if database exists
+        if (not Map.has(databases, thash, databaseName)) {
+            let remark = "database does not exist: " # debug_show (databaseName);
+            Debug.print(remark);
+            return #err([remark]);
+        };
+
+        ignore do ? {
+            let database = Map.get(databases, thash, databaseName)!;
+
+            // check if table exists
+            if (not Map.has(database.tables, thash, tableName)) {
+                let remark = "table does not exist: " # debug_show (tableName);
+                Debug.print(remark);
+                return #err([remark]);
+            };
+
+            let table = Map.get(database.tables, thash, tableName)!;
+            let tableItems = table.items;
+
+            // Sort logic
+            let sortPayload = Utils.initializeSortObject(scanInput.sortObject);
+
+            let sortedItems = applySorting({
+                sortObject = sortPayload;
+                tableItems;
+            });
+
+            let searchPayload = Utils.initializeSearchObject(scanInput.searchObject);
+
+            // Global Search Logic
+            let itemsIterator = applyGlobalSearch({
+                alfangoDB;
+                databaseName;
+                searchObject = searchPayload;
+                sortedItems;
+            });
+
+            let itemsMap = Map.fromIter<Database.Id, Database.Item>(itemsIterator, thash);
+
+            let filteredItemMap = Map.filter(
+                itemsMap,
+                thash,
+                func(_itemId : Database.Id, item : Database.Item) : Bool {
+                    applyFilterExpression({ item; filterExpressions });
+                },
+            );
+
+            let filteredItemsBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(filteredItemMap.size());
+            for (filteredItem in Map.valsDesc(filteredItemMap)) {
+                filteredItemsBuffer.add({
+                    id = filteredItem.id;
+                    item = Map.toArray(filteredItem.attributeDataValueMap);
+                });
+            };
+
+            return #ok(Buffer.toArray(filteredItemsBuffer));
+        };
+
+        Prelude.unreachable();
+    };
+
+    public func scanAndGetIdsUsingGlobalSearchAndSort({
+        scanAndGetIdsInput : InputTypes.ScanAndGetIdsWithSearchAndSortInputType;
+        alfangoDB : Database.AlfangoDB;
+    }) : OutputTypes.ScanAndGetIdsOutputType {
+
+        // get databases
+        let databases = alfangoDB.databases;
+
+        let { databaseName; tableName; filterExpressions } = scanAndGetIdsInput;
+
+        // check if database exists
+        if (not Map.has(databases, thash, databaseName)) {
+            let remark = "database does not exist: " # debug_show (databaseName);
+            Debug.print(remark);
+            return #err([remark]);
+        };
+
+        ignore do ? {
+            let database = Map.get(databases, thash, databaseName)!;
+
+            // check if table exists
+            if (not Map.has(database.tables, thash, tableName)) {
+                let remark = "table does not exist: " # debug_show (tableName);
+                Debug.print(remark);
+                return #err([remark]);
+            };
+
+            let table = Map.get(database.tables, thash, tableName)!;
+            let tableItems = table.items;
+
+            // Sort logic
+            let sortPayload = Utils.initializeSortObject(scanAndGetIdsInput.sortObject);
+
+            let sortedItems = applySorting({
+                sortObject = sortPayload;
+                tableItems;
+            });
+
+            let searchPayload = Utils.initializeSearchObject(scanAndGetIdsInput.searchObject);
+
+            // Global Search Logic
+            let itemsIterator = applyGlobalSearch({
+                alfangoDB;
+                databaseName;
+                searchObject = searchPayload;
+                sortedItems;
+            });
+
+            // Filter logic
+            let itemsMap = Map.fromIter<Database.Id, Database.Item>(itemsIterator, thash);
+
+            let filteredItemIdsBuffer = Buffer.Buffer<Text>(0);
+            for (item in Map.vals(itemsMap)) {
+                // apply filter expression
+                if (applyFilterExpression({ item; filterExpressions })) {
+                    filteredItemIdsBuffer.add(item.id);
+                };
+            };
+
+            return #ok({
+                ids = Buffer.toArray(filteredItemIdsBuffer);
+            });
+        };
+
+        Prelude.unreachable();
+    };
+
     public func paginatedScan({
         paginatedScanInput : InputTypes.PaginatedScanInputType;
         alfangoDB : Database.AlfangoDB;
@@ -307,48 +446,57 @@ module {
                         matchingSearchItemBuffer.add(sortedItem);
                         break searchItemAttributeDataValueMap;
                     } else {
-                        // add attributes named foreignKeyName and primaryKeyTableName
-
-                        // search the record(using id field of primaryKeyTable) for foreignKeyName in primaryKeyTableName
-
-                        // If record exists, match with all values of the record. If there is a match, insert the sortedItem to buffer and break
-
-                        // If the record does not exist, do nothing and exit
 
                         var exists = false;
 
                         let foreignKeyArray = searchObject.foreignKeys;
 
+                        Debug.print("Foreign key array --> " # debug_show (foreignKeyArray));
+
                         switch (foreignKeyArray) {
                             case (?foreignKeyArray) {
                                 label foreignKeySearchItems for (foreignKeyItem in foreignKeyArray.vals()) {
+
+                                    Debug.print("Foreign key item --> " # debug_show (foreignKeyItem));
+
                                     ignore do ? {
                                         let database = Map.get(databases, thash, databaseName)!;
 
                                         let table = Map.get(database.tables, thash, foreignKeyItem.primaryKeyTableName)!;
 
                                         let tableItems = table.items;
+                                        Debug.print("Table items --> " # debug_show (tableItems));
 
                                         let foreignKeyItemId = Utils.getTextKeyValue(sortedItem, foreignKeyItem.foreignKeyName);
+                                        Debug.print("Foreign key id --> " # debug_show (foreignKeyItemId));
 
                                         label allParentTableItems for (itemObject in Map.toArray(tableItems).vals()) {
 
                                             let parentTableItem = itemObject.1;
+                                            Debug.print("Parent item --> " # debug_show (parentTableItem));
+
                                             let parentTableId = parentTableItem.id;
 
                                             if (parentTableId == foreignKeyItemId) {
                                                 let attributeDataValueMap = parentTableItem.attributeDataValueMap;
+                                                Debug.print("Attribute data value map --> " # debug_show (attributeDataValueMap));
+
                                                 let itemIterator = Map.vals(attributeDataValueMap);
+                                                Debug.print("Item iterator --> " # debug_show (itemIterator.next()));
 
                                                 label parentTableSingleItem for (item in itemIterator) {
                                                     let attributeDataValue = Utils.getAttributeDataValue({
                                                         attributeDataValue = item;
                                                     });
 
+                                                    Debug.print("Attribute data value  --> " # debug_show (attributeDataValue));
+                                                    Debug.print("Search value  --> " # debug_show (searchValueText));
+
                                                     exists := applyFilterCONTAINS({
                                                         attributeDataValue = #text(Text.toLowercase(attributeDataValue));
                                                         conditionAttributeDataValue = #text(Text.toLowercase(searchValueText));
                                                     });
+                                                    Debug.print("Exists  --> " # debug_show (exists));
 
                                                     if (exists) {
                                                         matchingSearchItemBuffer.add(sortedItem);
@@ -954,25 +1102,18 @@ module {
 
         var areEqual = false;
 
-        Debug.print("Attribute data value --> " # debug_show (attributeDataValue));
-
-        Debug.print("Condition data value --> " # debug_show (conditionAttributeDataValue));
-
         label items for (conditionAttribute in conditionAttributeDataValue.vals()) {
             areEqual := applyFilterEQ({
                 attributeDataValue;
                 conditionAttributeDataValue = conditionAttribute;
             });
 
-            Debug.print("Are Equal --> " #debug_show (areEqual));
-
             if (areEqual) {
-                Debug.print("Break --> " #debug_show (areEqual));
+
                 break items;
             };
         };
 
-        Debug.print("Loop exit --> " #debug_show (areEqual));
         return areEqual;
 
     };
