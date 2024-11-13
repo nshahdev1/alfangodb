@@ -45,6 +45,14 @@ module {
 
     public type PaginatedScanOutputType = Result.Result<{ items : [{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }]; offset : Nat; limit : Nat; scannedItemCount : Int; nonScannedItemCount : Int }, [Text]>;
 
+    public type PaginatedItemOutputType = {
+        items : [{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }];
+        offset : Nat;
+        limit : Nat;
+        scannedItemCount : Int;
+        nonScannedItemCount : Int;
+    };
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public type AddAttributeOutputType = Result.Result<{ databaseName : Text; tableName : Text; attributeName : Text }, [Text]>;

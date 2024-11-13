@@ -90,6 +90,7 @@ module {
     public type ScanOutputType = OutputTypes.ScanOutputType;
     public type ScanAndGetIdsOutputType = OutputTypes.ScanAndGetIdsOutputType;
     public type PaginatedScanOutputType = OutputTypes.PaginatedScanOutputType;
+    public type PaginatedItemOutputType = OutputTypes.PaginatedItemOutputType;
 
     public let {
         scan;

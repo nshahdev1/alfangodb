@@ -378,7 +378,7 @@ module {
         items : [{ id : Text; item : [(Text, AttributeDataValue)] }];
         offset : Nat;
         limit : Nat;
-    }) : OutputTypes.PaginatedScanOutputType {
+    }) : OutputTypes.PaginatedItemOutputType {
         var itemIdx : Int = -1;
         var filteredItemCount : Nat = 0;
         let filteredItemBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(limit);
@@ -406,13 +406,13 @@ module {
 
         };
 
-        return #ok({
+        return {
             items = Buffer.toArray(filteredItemBuffer);
             offset;
             limit;
             scannedItemCount = itemIdx + 1;
             nonScannedItemCount = Array.size(items) - (itemIdx + 1);
-        });
+        };
     };
 
     private func applySorting({
