@@ -374,6 +374,39 @@ module {
         Prelude.unreachable();
     };
 
+    public func applyPagination({
+        items : [{ id : Text; item : [(Text, AttributeDataValue)] }];
+        offset : Nat;
+        limit : Nat;
+    }) {
+        var itemIdx : Int = -1;
+        var filteredItemCount : Nat = 0;
+        let filteredItemBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(limit);
+
+        label items for (item in items.vals()) {
+            itemIdx := itemIdx + 1;
+            Debug.print("itemIdx: " # debug_show (itemIdx) # " offset: " # debug_show (offset) # " limit: " # debug_show (limit) # " filteredItemCount: " # debug_show (filteredItemCount) # " item: " # debug_show (item.id));
+            // apply filter expression
+
+            filteredItemCount := filteredItemCount + 1;
+            // check if item is within the offset and limit
+            if (filteredItemCount > offset) {
+                if (filteredItemCount <= offset + limit) {
+                    filteredItemBuffer.add({
+                        id = item.id;
+                        item = item.item;
+                    });
+                    if (filteredItemCount == offset + limit) {
+                        break items;
+                    };
+                } else {
+                    break items;
+                };
+            };
+
+        };
+    };
+
     private func applySorting({
         sortObject : InputTypes.SortInputType;
         tableItems : Map.Map<Text, Database.Item>;
