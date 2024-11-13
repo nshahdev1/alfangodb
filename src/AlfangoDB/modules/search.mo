@@ -185,7 +185,7 @@ module {
             );
 
             let filteredItemsBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(filteredItemMap.size());
-            for (filteredItem in Map.valsDesc(filteredItemMap)) {
+            for (filteredItem in Map.vals(filteredItemMap)) {
                 filteredItemsBuffer.add({
                     id = filteredItem.id;
                     item = Map.toArray(filteredItem.attributeDataValueMap);
