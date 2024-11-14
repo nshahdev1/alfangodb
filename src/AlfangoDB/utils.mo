@@ -43,6 +43,7 @@ import InputTypes "/types/input";
 import Database "types/database";
 import Datatypes "types/datatype";
 import Datatype "types/datatype";
+import Output "types/output";
 
 module {
 
@@ -189,9 +190,91 @@ module {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public func getNatKeyValue(event : (Database.Id, Database.Item), sortKey : Text) : Nat {
+    public func getAscendingSortOrder(
+        sortKeyDataType : Datatypes.AttributeDataType,
+        sortKey : Text,
+        events : [Output.ItemOutputType],
+    ) : [Output.ItemOutputType] {
 
-        let array = Map.toArray(event.1.attributeDataValueMap);
+        var sortedItems : [Output.ItemOutputType] = [];
+
+        switch (sortKeyDataType) {
+            case (#nat) {
+
+                sortedItems := Array.sort(
+                    events,
+                    (
+                        func(a : Output.ItemOutputType, b : Output.ItemOutputType) : Order.Order {
+                            let array_a = a.item;
+                            let array_b = b.item;
+
+                            return Nat.compare(getNatKeyValue(array_a, sortKey), getNatKeyValue(array_b, sortKey)); // Sort in ascending order
+                        }
+                    ),
+                );
+            };
+            case _ {
+                sortedItems := Array.sort(
+                    events,
+                    (
+                        func(a : Output.ItemOutputType, b : Output.ItemOutputType) : Order.Order {
+                            let array_a = a.item;
+
+                            let array_b = b.item;
+
+                            return Text.compare(getTextKeyValue(array_a, sortKey), getTextKeyValue(array_b, sortKey)); // Sort in ascending order
+                        }
+                    ),
+                );
+            };
+
+        };
+        return sortedItems;
+    };
+
+    public func getDescendingSortOrder(
+        sortKeyDataType : Datatypes.AttributeDataType,
+        sortKey : Text,
+        events : [Output.ItemOutputType],
+    ) : [Output.ItemOutputType] {
+
+        var sortedItems : [Output.ItemOutputType] = [];
+
+        switch (sortKeyDataType) {
+            case (#nat) {
+
+                sortedItems := Array.sort(
+                    events,
+                    (
+                        func(a : Output.ItemOutputType, b : Output.ItemOutputType) : Order.Order {
+                            let array_a = a.item;
+                            let array_b = b.item;
+
+                            return Nat.compare(getNatKeyValue(array_b, sortKey), getNatKeyValue(array_a, sortKey)); // Sort in ascending order
+                        }
+                    ),
+                );
+            };
+            case _ {
+                sortedItems := Array.sort(
+                    events,
+                    (
+                        func(a : Output.ItemOutputType, b : Output.ItemOutputType) : Order.Order {
+                            let array_a = a.item;
+
+                            let array_b = b.item;
+
+                            return Text.compare(getTextKeyValue(array_b, sortKey), getTextKeyValue(array_a, sortKey)); // Sort in ascending order
+                        }
+                    ),
+                );
+            };
+
+        };
+        return sortedItems;
+    };
+
+    public func getNatKeyValue(array : [(Database.AttributeName, Datatypes.AttributeDataValue)], sortKey : Text) : Nat {
 
         let tuple = Array.find<(Text, Datatypes.AttributeDataValue)>(
             array,
@@ -214,9 +297,7 @@ module {
 
     };
 
-    public func getTextKeyValue(event : (Database.Id, Database.Item), sortKey : Text) : Text {
-
-        let array = Map.toArray(event.1.attributeDataValueMap);
+    public func getTextKeyValue(array : [(Database.AttributeName, Datatypes.AttributeDataValue)], sortKey : Text) : Text {
 
         let tuple = Array.find<(Text, Datatypes.AttributeDataValue)>(
             array,
@@ -468,7 +549,11 @@ module {
                     items,
                     (
                         func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
-                            return Nat.compare(getNatKeyValue(a, sortKey), getNatKeyValue(b, sortKey)); // Sort in ascending order
+                            let array_a = Map.toArray(a.1.attributeDataValueMap);
+
+                            let array_b = Map.toArray(b.1.attributeDataValueMap);
+
+                            return Nat.compare(getNatKeyValue(array_a, sortKey), getNatKeyValue(array_b, sortKey)); // Sort in ascending order
                         }
                     ),
                 );
@@ -478,7 +563,11 @@ module {
                     items,
                     (
                         func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
-                            return Text.compare(getTextKeyValue(a, sortKey), getTextKeyValue(b, sortKey)); // Sort in ascending order
+                            let array_a = Map.toArray(a.1.attributeDataValueMap);
+
+                            let array_b = Map.toArray(b.1.attributeDataValueMap);
+
+                            return Text.compare(getTextKeyValue(array_a, sortKey), getTextKeyValue(array_b, sortKey)); // Sort in ascending order
                         }
                     ),
                 );
@@ -496,7 +585,11 @@ module {
                     items,
                     (
                         func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
-                            return Nat.compare(getNatKeyValue(b, sortKey), getNatKeyValue(a, sortKey)); // Sort in descending order
+                            let array_a = Map.toArray(a.1.attributeDataValueMap);
+
+                            let array_b = Map.toArray(b.1.attributeDataValueMap);
+
+                            return Nat.compare(getNatKeyValue(array_b, sortKey), getNatKeyValue(array_a, sortKey)); // Sort in descending order
                         }
                     ),
                 );
@@ -506,7 +599,11 @@ module {
                     items,
                     (
                         func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
-                            return Text.compare(getTextKeyValue(b, sortKey), getTextKeyValue(a, sortKey)); // Sort in descending order
+                            let array_a = Map.toArray(a.1.attributeDataValueMap);
+
+                            let array_b = Map.toArray(b.1.attributeDataValueMap);
+
+                            return Text.compare(getTextKeyValue(array_b, sortKey), getTextKeyValue(array_a, sortKey)); // Sort in descending order
                         }
                     ),
                 );

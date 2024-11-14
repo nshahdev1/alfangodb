@@ -141,4 +141,5 @@ module {
         foreignKeyName : Text;
         primaryKeyTableName : Text;
     };
+
 };

@@ -375,13 +375,13 @@ module {
     };
 
     public func applyPagination({
-        items : [{ id : Text; item : [(Text, AttributeDataValue)] }];
+        items : [OutputTypes.ItemOutputType];
         offset : Nat;
         limit : Nat;
     }) : OutputTypes.PaginatedScanOutputType {
         var itemIdx : Int = -1;
         var filteredItemCount : Nat = 0;
-        let filteredItemBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(limit);
+        let filteredItemBuffer = Buffer.Buffer<{ id : Database.Id; item : [(Database.AttributeName, Datatypes.AttributeDataValue)] }>(limit);
 
         label items for (item in items.vals()) {
             itemIdx := itemIdx + 1;
@@ -442,6 +442,38 @@ module {
             };
 
             case null sortedItems := Map.toArrayDesc(tableItems);
+        };
+
+        return sortedItems;
+    };
+
+    public func sortItems({
+        sortObject : InputTypes.SortInputType;
+        tableItems : [OutputTypes.ItemOutputType];
+    }) : [OutputTypes.ItemOutputType] {
+
+        var sortedItems : [OutputTypes.ItemOutputType] = [];
+
+        switch (sortObject.sortKey) {
+            case (?sortKey) {
+                let sortDirection = Utils.initializeSortOrder(sortObject.sortDirection, #desc);
+
+                let sortKeyDataType = Utils.initializeSortKeyDataType(sortObject.sortKeyDataType, #nat);
+
+                switch (sortDirection) {
+                    case (#desc) {
+
+                        sortedItems := Utils.getDescendingSortOrder(sortKeyDataType, sortKey, tableItems);
+                    };
+                    case (#asc) {
+
+                        sortedItems := Utils.getAscendingSortOrder(sortKeyDataType, sortKey, tableItems);
+                    };
+                };
+
+            };
+
+            case null sortedItems := tableItems;
         };
 
         return sortedItems;
@@ -508,7 +540,9 @@ module {
                                         let tableItems = table.items;
                                         Debug.print("Table items --> " # debug_show (tableItems));
 
-                                        let foreignKeyItemId = Utils.getTextKeyValue(sortedItem, foreignKeyItem.foreignKeyName);
+                                        let array = Map.toArray(sortedItem.1.attributeDataValueMap);
+
+                                        let foreignKeyItemId = Utils.getTextKeyValue(array, foreignKeyItem.foreignKeyName);
                                         Debug.print("Foreign key id --> " # debug_show (foreignKeyItemId));
 
                                         label allParentTableItems for (itemObject in Map.toArray(tableItems).vals()) {
