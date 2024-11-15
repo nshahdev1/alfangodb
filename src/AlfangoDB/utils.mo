@@ -297,6 +297,29 @@ module {
 
     };
 
+    public func getNat64KeyValue(array : [(Database.AttributeName, Datatypes.AttributeDataValue)], sortKey : Text) : Nat64 {
+
+        let tuple = Array.find<(Text, Datatypes.AttributeDataValue)>(
+            array,
+            func(tuple) : Bool {
+                return tuple.0 == sortKey;
+            },
+        );
+
+        switch (tuple) {
+            case null 0;
+
+            case (?result) {
+                do {
+                    let (_, attributeDataValue) = result;
+                    let value = getAttributeDataValue({ attributeDataValue });
+                    return textToNat64(value);
+                };
+            };
+        };
+
+    };
+
     public func getTextKeyValue(array : [(Database.AttributeName, Datatypes.AttributeDataValue)], sortKey : Text) : Text {
 
         let tuple = Array.find<(Text, Datatypes.AttributeDataValue)>(
@@ -335,6 +358,10 @@ module {
         } else {
             0;
         };
+    };
+
+    public func textToNat64(t : Text) : Nat64 {
+        Nat64.fromNat(textToNat(t));
     };
 
     public func getAttributeDataValue({
@@ -558,6 +585,20 @@ module {
                     ),
                 );
             };
+            case (#nat64) {
+                sortedItems := Array.sort(
+                    items,
+                    (
+                        func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                            let array_a = Map.toArray(a.1.attributeDataValueMap);
+
+                            let array_b = Map.toArray(b.1.attributeDataValueMap);
+
+                            return Nat64.compare(getNat64KeyValue(array_a, sortKey), getNat64KeyValue(array_b, sortKey)); // Sort in descending order
+                        }
+                    ),
+                );
+            };
             case _ {
                 sortedItems := Array.sort(
                     items,
@@ -590,6 +631,20 @@ module {
                             let array_b = Map.toArray(b.1.attributeDataValueMap);
 
                             return Nat.compare(getNatKeyValue(array_b, sortKey), getNatKeyValue(array_a, sortKey)); // Sort in descending order
+                        }
+                    ),
+                );
+            };
+            case (#nat64) {
+                sortedItems := Array.sort(
+                    items,
+                    (
+                        func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                            let array_a = Map.toArray(a.1.attributeDataValueMap);
+
+                            let array_b = Map.toArray(b.1.attributeDataValueMap);
+
+                            return Nat64.compare(getNat64KeyValue(array_b, sortKey), getNat64KeyValue(array_a, sortKey)); // Sort in descending order
                         }
                     ),
                 );
