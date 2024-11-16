@@ -159,7 +159,7 @@ module {
             // Sort logic
             let sortPayload = Utils.initializeSortObject(scanInput.sortObject);
 
-            let sortedItems = applySorting({
+            let sortedItems = applySortingToMap({
                 sortObject = sortPayload;
                 tableItems;
             });
@@ -231,7 +231,7 @@ module {
             // Sort logic
             let sortPayload = Utils.initializeSortObject(scanAndGetIdsInput.sortObject);
 
-            let sortedItems = applySorting({
+            let sortedItems = applySortingToMap({
                 sortObject = sortPayload;
                 tableItems;
             });
@@ -320,7 +320,7 @@ module {
             // Sort logic
             let sortPayload = Utils.initializeSortObject(sortObject);
 
-            let sortedItems = applySorting({
+            let sortedItems = applySortingToMap({
                 sortObject = sortPayload;
                 tableItems;
             });
@@ -383,7 +383,7 @@ module {
     }) : OutputTypes.PaginatedScanOutputType {
         var itemIdx : Int = -1;
         var filteredItemCount : Nat = 0;
-        let filteredItemBuffer = Buffer.Buffer<{ id : Database.Id; item : [(Database.AttributeName, Datatypes.AttributeDataValue)]; createdAt : Int; updatedAt : Int }>(limit);
+        let filteredItemBuffer = Buffer.Buffer<OutputTypes.ItemOutputType>(limit);
 
         label items for (item in items.vals()) {
             itemIdx := itemIdx + 1;
@@ -419,7 +419,7 @@ module {
         });
     };
 
-    private func applySorting({
+    private func applySortingToMap({
         sortObject : InputTypes.SortInputType;
         tableItems : Map.Map<Text, Database.Item>;
     }) : OutputTypes.ItemArrayOutputType {
@@ -451,7 +451,7 @@ module {
         return sortedItems;
     };
 
-    public func sortItems({
+    public func sortArrayItems({
         sortObject : InputTypes.SortInputType;
         tableItems : [OutputTypes.ItemOutputType];
     }) : [OutputTypes.ItemOutputType] {
