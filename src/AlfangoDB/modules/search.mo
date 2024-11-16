@@ -315,7 +315,7 @@ module {
 
             var itemIdx : Int = -1;
             var filteredItemCount : Nat = 0;
-            let filteredItemBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(limit);
+            let filteredItemBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)]; createdAt : Int; updatedAt : Int }>(limit);
 
             // Sort logic
             let sortPayload = Utils.initializeSortObject(sortObject);
@@ -350,6 +350,8 @@ module {
                             filteredItemBuffer.add({
                                 id = item.id;
                                 item = Map.toArray(item.attributeDataValueMap);
+                                createdAt = item.createdAt;
+                                updatedAt = item.updatedAt;
                             });
                             if (filteredItemCount == offset + limit) {
                                 break items;
@@ -381,7 +383,7 @@ module {
     }) : OutputTypes.PaginatedScanOutputType {
         var itemIdx : Int = -1;
         var filteredItemCount : Nat = 0;
-        let filteredItemBuffer = Buffer.Buffer<{ id : Database.Id; item : [(Database.AttributeName, Datatypes.AttributeDataValue)] }>(limit);
+        let filteredItemBuffer = Buffer.Buffer<{ id : Database.Id; item : [(Database.AttributeName, Datatypes.AttributeDataValue)]; createdAt : Int; updatedAt : Int }>(limit);
 
         label items for (item in items.vals()) {
             itemIdx := itemIdx + 1;
@@ -395,6 +397,8 @@ module {
                     filteredItemBuffer.add({
                         id = item.id;
                         item = item.item;
+                        createdAt = item.createdAt;
+                        updatedAt = item.updatedAt;
                     });
                     if (filteredItemCount == offset + limit) {
                         break items;

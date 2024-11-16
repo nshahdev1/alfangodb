@@ -29,6 +29,8 @@ module {
     public type ItemOutputType = {
         id : Text;
         item : [(Text, Datatypes.AttributeDataValue)];
+        createdAt : Int;
+        updatedAt : Int;
     };
 
     public type GetItemByIdOutputType = Result.Result<ItemOutputType, [Text]>;
@@ -43,7 +45,7 @@ module {
 
     public type ScanAndGetIdsOutputType = Result.Result<{ ids : [Text] }, [Text]>;
 
-    public type PaginatedScanOutputType = Result.Result<{ items : [{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }]; offset : Nat; limit : Nat; scannedItemCount : Int; nonScannedItemCount : Int }, [Text]>;
+    public type PaginatedScanOutputType = Result.Result<{ items : [{ id : Text; item : [(Text, Datatypes.AttributeDataValue)]; createdAt : Int; updatedAt : Int }]; offset : Nat; limit : Nat; scannedItemCount : Int; nonScannedItemCount : Int }, [Text]>;
 
     public type PaginatedItemOutputType = {
         items : [{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }];
