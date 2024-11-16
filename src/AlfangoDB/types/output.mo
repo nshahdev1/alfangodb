@@ -41,14 +41,14 @@ module {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public type ScanOutputType = Result.Result<[{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }], [Text]>;
+    public type ScanOutputType = Result.Result<[ItemOutputType], [Text]>;
 
     public type ScanAndGetIdsOutputType = Result.Result<{ ids : [Text] }, [Text]>;
 
-    public type PaginatedScanOutputType = Result.Result<{ items : [{ id : Text; item : [(Text, Datatypes.AttributeDataValue)]; createdAt : Int; updatedAt : Int }]; offset : Nat; limit : Nat; scannedItemCount : Int; nonScannedItemCount : Int }, [Text]>;
+    public type PaginatedScanOutputType = Result.Result<{ items : [ItemOutputType]; offset : Nat; limit : Nat; scannedItemCount : Int; nonScannedItemCount : Int }, [Text]>;
 
     public type PaginatedItemOutputType = {
-        items : [{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }];
+        items : [ItemOutputType];
         offset : Nat;
         limit : Nat;
         scannedItemCount : Int;

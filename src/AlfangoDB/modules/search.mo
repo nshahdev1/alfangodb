@@ -66,11 +66,13 @@ module {
                 },
             );
 
-            let filteredItemsBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(filteredItemMap.size());
+            let filteredItemsBuffer = Buffer.Buffer<OutputTypes.ItemOutputType>(filteredItemMap.size());
             for (filteredItem in Map.valsDesc(filteredItemMap)) {
                 filteredItemsBuffer.add({
                     id = filteredItem.id;
                     item = Map.toArray(filteredItem.attributeDataValueMap);
+                    createdAt = filteredItem.createdAt;
+                    updatedAt = filteredItem.updatedAt;
                 });
             };
 
@@ -184,11 +186,13 @@ module {
                 },
             );
 
-            let filteredItemsBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)] }>(filteredItemMap.size());
+            let filteredItemsBuffer = Buffer.Buffer<OutputTypes.ItemOutputType>(filteredItemMap.size());
             for (filteredItem in Map.vals(filteredItemMap)) {
                 filteredItemsBuffer.add({
                     id = filteredItem.id;
                     item = Map.toArray(filteredItem.attributeDataValueMap);
+                    createdAt = filteredItem.createdAt;
+                    updatedAt = filteredItem.updatedAt;
                 });
             };
 
