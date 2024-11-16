@@ -298,6 +298,18 @@ module {
                                     comparison := handleNat64Comparsion(key_a, key_b, sortDirection);
 
                                 };
+
+                                case (#bool) {
+
+                                    let array_a = a.item;
+                                    let key_a = getBoolKeyValue(array_a, sortKey);
+
+                                    let array_b = b.item;
+                                    let key_b = getBoolKeyValue(array_b, sortKey);
+
+                                    comparison := handleBoolComparsion(key_a, key_b, sortDirection);
+                                };
+
                                 case _ {
                                     let array_a = a.item;
                                     let key_a = getTextKeyValue(array_a, sortKey);
@@ -317,6 +329,29 @@ module {
         );
 
         return sortedItems;
+    };
+
+    public func getBoolKeyValue(array : [(Database.AttributeName, Datatypes.AttributeDataValue)], sortKey : Text) : Bool {
+
+        let tuple = Array.find<(Text, Datatypes.AttributeDataValue)>(
+            array,
+            func(tuple) : Bool {
+                return tuple.0 == sortKey;
+            },
+        );
+
+        switch (tuple) {
+            case null false;
+
+            case (?result) {
+                do {
+                    let (_, attributeDataValue) = result;
+                    let value = getAttributeDataValue({ attributeDataValue });
+                    return textToBool(value);
+                };
+            };
+        };
+
     };
 
     public func getNatKeyValue(array : [(Database.AttributeName, Datatypes.AttributeDataValue)], sortKey : Text) : Nat {
@@ -407,6 +442,14 @@ module {
 
     public func textToNat64(t : Text) : Nat64 {
         Nat64.fromNat(textToNat(t));
+    };
+
+    public func textToBool(text : Text) : Bool {
+        switch (text) {
+            case "true" { return true };
+            case "false" { return false };
+            case _ { return false }; // default case
+        };
     };
 
     public func getAttributeDataValue({
@@ -731,72 +774,103 @@ module {
     ) : [(Database.Id, Database.Item)] {
         var sortedItems : [(Database.Id, Database.Item)] = [];
 
-        ignore do ? {
-            for (sortKeyObject in sortKeysArray.vals()) {
+        sortedItems := Array.sort(
+            items,
+            (
+                func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
 
-                let sortDirection = sortKeyObject.sortDirection!;
-                let sortKeyDataType = sortKeyObject.sortKeyDataType!;
-                let sortKey = sortKeyObject.sortKey!;
+                    var comparison : Order.Order = #equal;
 
-                switch (sortKeyDataType) {
-                    case (#nat) {
-                        sortedItems := Array.sort(
-                            items,
-                            (
-                                func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                    ignore do ? {
+
+                        for (sortKeyObject in sortKeysArray.vals()) {
+
+                            let sortDirection = sortKeyObject.sortDirection!;
+                            let sortKeyDataType = sortKeyObject.sortKeyDataType!;
+                            let sortKey = sortKeyObject.sortKey!;
+                            switch (sortKeyDataType) {
+
+                                case (#nat) {
                                     let array_a = Map.toArray(a.1.attributeDataValueMap);
                                     let key_a = getNatKeyValue(array_a, sortKey);
 
                                     let array_b = Map.toArray(b.1.attributeDataValueMap);
                                     let key_b = getNatKeyValue(array_b, sortKey);
 
-                                    return handleNatComparsion(key_a, key_b, sortDirection);
-                                }
-                            ),
-                        );
-                    };
-                    case (#nat64) {
-                        sortedItems := Array.sort(
-                            items,
-                            (
-                                func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                                    comparison := handleNatComparsion(key_a, key_b, sortDirection);
+                                };
 
+                                case (#nat64) {
                                     let array_a = Map.toArray(a.1.attributeDataValueMap);
                                     let key_a = getNat64KeyValue(array_a, sortKey);
 
                                     let array_b = Map.toArray(b.1.attributeDataValueMap);
                                     let key_b = getNat64KeyValue(array_b, sortKey);
 
-                                    return handleNat64Comparsion(key_a, key_b, sortDirection);
-                                }
-                            ),
-                        );
-                    };
-                    case _ {
-                        sortedItems := Array.sort(
-                            items,
-                            (
-                                func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                                    comparison := handleNat64Comparsion(key_a, key_b, sortDirection);
+
+                                };
+
+                                case (#bool) {
+
+                                    let array_a = Map.toArray(a.1.attributeDataValueMap);
+                                    let key_a = getBoolKeyValue(array_a, sortKey);
+
+                                    let array_b = Map.toArray(b.1.attributeDataValueMap);
+                                    let key_b = getBoolKeyValue(array_b, sortKey);
+
+                                    comparison := handleBoolComparsion(key_a, key_b, sortDirection);
+                                };
+
+                                case _ {
+
                                     let array_a = Map.toArray(a.1.attributeDataValueMap);
                                     let key_a = getTextKeyValue(array_a, sortKey);
 
                                     let array_b = Map.toArray(b.1.attributeDataValueMap);
                                     let key_b = getTextKeyValue(array_b, sortKey);
 
-                                    return handleTextComparision(key_a, key_b, sortDirection);
-                                }
-                            ),
-                        );
+                                    comparison := handleTextComparision(key_a, key_b, sortDirection);
+
+                                };
+                            };
+
+                        };
+
                     };
-                };
-            };
-        };
+                    return comparison;
+                }
+            ),
+
+        );
+
         return sortedItems;
     };
 
     public func handleNatComparsion(key_a : Nat, key_b : Nat, sortDirection : Datatypes.SortDirection) : Order.Order {
 
         var comparison = Nat.compare(key_a, key_b);
+
+        if (comparison != #equal) {
+            switch (sortDirection) {
+                case (#asc) comparison := comparison;
+                case (#desc) {
+                    if (comparison == #less) {
+                        comparison := #greater;
+                    } else {
+                        comparison := #less;
+                    };
+                };
+            };
+
+        };
+
+        return comparison;
+    };
+
+    public func handleBoolComparsion(key_a : Bool, key_b : Bool, sortDirection : Datatypes.SortDirection) : Order.Order {
+
+        var comparison = Bool.compare(key_a, key_b);
 
         if (comparison != #equal) {
             switch (sortDirection) {
