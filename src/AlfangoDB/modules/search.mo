@@ -159,7 +159,7 @@ module {
             let tableItems = table.items;
 
             // Sort logic
-            let sortPayload = Utils.initializeSortObject(scanInput.sortObject);
+            let sortPayload = Utils.initializeSortObjectArray(scanInput.sortObject);
 
             let sortedItems = applySortingToMap({
                 sortObject = sortPayload;
@@ -233,7 +233,7 @@ module {
             let tableItems = table.items;
 
             // Sort logic
-            let sortPayload = Utils.initializeSortObject(scanAndGetIdsInput.sortObject);
+            let sortPayload = Utils.initializeSortObjectArray(scanAndGetIdsInput.sortObject);
 
             let sortedItems = applySortingToMap({
                 sortObject = sortPayload;
@@ -322,7 +322,7 @@ module {
             let filteredItemBuffer = Buffer.Buffer<{ id : Text; item : [(Text, Datatypes.AttributeDataValue)]; createdAt : Int; updatedAt : Int }>(limit);
 
             // Sort logic
-            let sortPayload = Utils.initializeSortObject(sortObject);
+            let sortPayload = Utils.initializeSortObjectArray(sortObject);
 
             let sortedItems = applySortingToMap({
                 sortObject = sortPayload;
@@ -424,32 +424,40 @@ module {
     };
 
     private func applySortingToMap({
-        sortObject : InputTypes.SortInputType;
+        sortObject : InputTypes.SortMultipleInputType;
         tableItems : Map.Map<Text, Database.Item>;
     }) : OutputTypes.ItemArrayOutputType {
 
         var sortedItems : OutputTypes.ItemArrayOutputType = [];
 
-        switch (sortObject.sortKey) {
-            case (?sortKey) {
-                let sortDirection = Utils.initializeSortOrder(sortObject.sortDirection, #desc);
+        ignore do ? {
+            for (sortKeyObject in sortObject.vals()) {
 
-                let sortKeyDataType = Utils.initializeSortKeyDataType(sortObject.sortKeyDataType, #nat);
+                let sortDirection = Utils.initializeSortOrder(sortKeyObject.sortDirection, #desc);
 
-                switch (sortDirection) {
-                    case (#desc) {
-                        let items = Map.toArrayDesc(tableItems);
-                        sortedItems := Utils.sortDescending(items, sortKey, sortKeyDataType);
+                let sortKeyDataType = Utils.initializeSortKeyDataType(sortKeyObject.sortKeyDataType, #nat);
+
+                let sortKey = sortKeyObject.sortKey;
+
+                switch (sortKey) {
+                    case (?sortKey) {
+
+                        switch (sortDirection) {
+                            case (#desc) {
+                                let items = Map.toArrayDesc(tableItems);
+                                sortedItems := Utils.sortDescending(items, sortKey, sortKeyDataType);
+                            };
+                            case (#asc) {
+                                let items = Map.toArray(tableItems);
+                                sortedItems := Utils.sortAscending(items, sortKey, sortKeyDataType);
+                            };
+                        };
+
                     };
-                    case (#asc) {
-                        let items = Map.toArray(tableItems);
-                        sortedItems := Utils.sortAscending(items, sortKey, sortKeyDataType);
-                    };
+
+                    case null sortedItems := Map.toArrayDesc(tableItems);
                 };
-
             };
-
-            case null sortedItems := Map.toArrayDesc(tableItems);
         };
 
         return sortedItems;
@@ -468,20 +476,40 @@ module {
 
                 let sortKeyDataType = Utils.initializeSortKeyDataType(sortObject.sortKeyDataType, #nat);
 
-                switch (sortDirection) {
-                    case (#desc) {
-
-                        sortedItems := Utils.getDescendingSortOrder(sortKeyDataType, sortKey, tableItems);
-                    };
-                    case (#asc) {
-
-                        sortedItems := Utils.getAscendingSortOrder(sortKeyDataType, sortKey, tableItems);
-                    };
-                };
+                sortedItems := Utils.getSortOrder(sortDirection, sortKeyDataType, sortKey, tableItems);
 
             };
 
             case null sortedItems := tableItems;
+        };
+
+        return sortedItems;
+    };
+
+    public func sortArrayItemsWithMultipleKeys({
+        sortObject : InputTypes.SortMultipleInputType;
+        tableItems : [OutputTypes.ItemOutputType];
+    }) : [OutputTypes.ItemOutputType] {
+
+        var sortedItems : [OutputTypes.ItemOutputType] = [];
+
+        ignore do ? {
+            for (sortKeyObject in sortObject.vals()) {
+
+                let sortDirection = sortKeyObject.sortDirection!;
+                let sortKeyDataType = sortKeyObject.sortKeyDataType!;
+                let sortKey = sortKeyObject.sortKey;
+
+                switch (sortKey) {
+                    case (?sortKey) {
+
+                        sortedItems := Utils.getSortOrder(sortDirection, sortKeyDataType, sortKey, tableItems);
+
+                    };
+
+                    case null sortedItems := tableItems;
+                };
+            };
         };
 
         return sortedItems;

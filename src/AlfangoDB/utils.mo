@@ -190,7 +190,8 @@ module {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public func getAscendingSortOrder(
+    public func getSortOrder(
+        sortDirection : Datatypes.SortDirection,
         sortKeyDataType : Datatypes.AttributeDataType,
         sortKey : Text,
         events : [Output.ItemOutputType],
@@ -206,9 +207,29 @@ module {
                     (
                         func(a : Output.ItemOutputType, b : Output.ItemOutputType) : Order.Order {
                             let array_a = a.item;
-                            let array_b = b.item;
+                            let key_a = getNatKeyValue(array_a, sortKey);
 
-                            return Nat.compare(getNatKeyValue(array_a, sortKey), getNatKeyValue(array_b, sortKey)); // Sort in ascending order
+                            let array_b = b.item;
+                            let key_b = getNatKeyValue(array_b, sortKey);
+
+                            return handleNatComparsion(key_a, key_b, sortDirection);
+                        }
+                    ),
+                );
+            };
+            case (#nat64) {
+
+                sortedItems := Array.sort(
+                    events,
+                    (
+                        func(a : Output.ItemOutputType, b : Output.ItemOutputType) : Order.Order {
+                            let array_a = a.item;
+                            let key_a = getNat64KeyValue(array_a, sortKey);
+
+                            let array_b = b.item;
+                            let key_b = getNat64KeyValue(array_b, sortKey);
+
+                            return handleNat64Comparsion(key_a, key_b, sortDirection);
                         }
                     ),
                 );
@@ -219,52 +240,12 @@ module {
                     (
                         func(a : Output.ItemOutputType, b : Output.ItemOutputType) : Order.Order {
                             let array_a = a.item;
+                            let key_a = getTextKeyValue(array_a, sortKey);
 
                             let array_b = b.item;
+                            let key_b = getTextKeyValue(array_b, sortKey);
 
-                            return Text.compare(getTextKeyValue(array_a, sortKey), getTextKeyValue(array_b, sortKey)); // Sort in ascending order
-                        }
-                    ),
-                );
-            };
-
-        };
-        return sortedItems;
-    };
-
-    public func getDescendingSortOrder(
-        sortKeyDataType : Datatypes.AttributeDataType,
-        sortKey : Text,
-        events : [Output.ItemOutputType],
-    ) : [Output.ItemOutputType] {
-
-        var sortedItems : [Output.ItemOutputType] = [];
-
-        switch (sortKeyDataType) {
-            case (#nat) {
-
-                sortedItems := Array.sort(
-                    events,
-                    (
-                        func(a : Output.ItemOutputType, b : Output.ItemOutputType) : Order.Order {
-                            let array_a = a.item;
-                            let array_b = b.item;
-
-                            return Nat.compare(getNatKeyValue(array_b, sortKey), getNatKeyValue(array_a, sortKey)); // Sort in ascending order
-                        }
-                    ),
-                );
-            };
-            case _ {
-                sortedItems := Array.sort(
-                    events,
-                    (
-                        func(a : Output.ItemOutputType, b : Output.ItemOutputType) : Order.Order {
-                            let array_a = a.item;
-
-                            let array_b = b.item;
-
-                            return Text.compare(getTextKeyValue(array_b, sortKey), getTextKeyValue(array_a, sortKey)); // Sort in ascending order
+                            return handleTextComparision(key_a, key_b, sortDirection);
                         }
                     ),
                 );
@@ -667,6 +648,138 @@ module {
         return sortedItems;
     };
 
+    public func sortMultipleItems(
+        items : [(Database.Id, Database.Item)],
+        sortKeysArray : InputTypes.SortMultipleInputType,
+    ) : [(Database.Id, Database.Item)] {
+        var sortedItems : [(Database.Id, Database.Item)] = [];
+
+        ignore do ? {
+            for (sortKeyObject in sortKeysArray.vals()) {
+
+                let sortDirection = sortKeyObject.sortDirection!;
+                let sortKeyDataType = sortKeyObject.sortKeyDataType!;
+                let sortKey = sortKeyObject.sortKey!;
+
+                switch (sortKeyDataType) {
+                    case (#nat) {
+                        sortedItems := Array.sort(
+                            items,
+                            (
+                                func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                                    let array_a = Map.toArray(a.1.attributeDataValueMap);
+                                    let key_a = getNatKeyValue(array_a, sortKey);
+
+                                    let array_b = Map.toArray(b.1.attributeDataValueMap);
+                                    let key_b = getNatKeyValue(array_b, sortKey);
+
+                                    return handleNatComparsion(key_a, key_b, sortDirection);
+                                }
+                            ),
+                        );
+                    };
+                    case (#nat64) {
+                        sortedItems := Array.sort(
+                            items,
+                            (
+                                func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+
+                                    let array_a = Map.toArray(a.1.attributeDataValueMap);
+                                    let key_a = getNat64KeyValue(array_a, sortKey);
+
+                                    let array_b = Map.toArray(b.1.attributeDataValueMap);
+                                    let key_b = getNat64KeyValue(array_b, sortKey);
+
+                                    return handleNat64Comparsion(key_a, key_b, sortDirection);
+                                }
+                            ),
+                        );
+                    };
+                    case _ {
+                        sortedItems := Array.sort(
+                            items,
+                            (
+                                func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
+                                    let array_a = Map.toArray(a.1.attributeDataValueMap);
+                                    let key_a = getTextKeyValue(array_a, sortKey);
+
+                                    let array_b = Map.toArray(b.1.attributeDataValueMap);
+                                    let key_b = getTextKeyValue(array_b, sortKey);
+
+                                    return handleTextComparision(key_a, key_b, sortDirection);
+                                }
+                            ),
+                        );
+                    };
+                };
+            };
+        };
+        return sortedItems;
+    };
+
+    public func handleNatComparsion(key_a : Nat, key_b : Nat, sortDirection : Datatypes.SortDirection) : Order.Order {
+
+        var comparison = Nat.compare(key_a, key_b);
+
+        if (comparison != #equal) {
+            switch (sortDirection) {
+                case (#asc) comparison := comparison;
+                case (#desc) {
+                    if (comparison == #less) {
+                        comparison := #greater;
+                    } else {
+                        comparison := #less;
+                    };
+                };
+            };
+
+        };
+
+        return comparison;
+    };
+
+    public func handleNat64Comparsion(key_a : Nat64, key_b : Nat64, sortDirection : Datatypes.SortDirection) : Order.Order {
+
+        var comparison = Nat64.compare(key_a, key_b);
+
+        if (comparison != #equal) {
+            switch (sortDirection) {
+                case (#asc) comparison := comparison;
+                case (#desc) {
+                    if (comparison == #less) {
+                        comparison := #greater;
+                    } else {
+                        comparison := #less;
+                    };
+                };
+            };
+
+        };
+
+        return comparison;
+    };
+
+    public func handleTextComparision(key_a : Text, key_b : Text, sortDirection : Datatypes.SortDirection) : Order.Order {
+
+        var comparison = Text.compare(key_a, key_b);
+
+        if (comparison != #equal) {
+            switch (sortDirection) {
+                case (#asc) comparison := comparison;
+                case (#desc) {
+                    if (comparison == #less) {
+                        comparison := #greater;
+                    } else {
+                        comparison := #less;
+                    };
+                };
+            };
+
+        };
+
+        return comparison;
+    };
+
     public func initializeSortObject(payload : ?InputTypes.SortInputType) : InputTypes.SortInputType {
 
         switch (payload) {
@@ -683,6 +796,23 @@ module {
                     sortKeyDataType = ? #nat;
                     sortDirection = ? #desc;
                 };
+            };
+        };
+
+    };
+
+    public func initializeSortObjectArray(payload : ?InputTypes.SortMultipleInputType) : InputTypes.SortMultipleInputType {
+
+        switch (payload) {
+            case (?sortObjectArr) {
+                return sortObjectArr;
+            };
+            case null {
+                return [{
+                    sortKey = null;
+                    sortKeyDataType = ? #nat;
+                    sortDirection = ? #desc;
+                }];
             };
         };
 

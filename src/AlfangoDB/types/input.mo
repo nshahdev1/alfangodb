@@ -61,7 +61,7 @@ module {
         databaseName : Text;
         tableName : Text;
         filterExpressions : [SearchTypes.FilterExpressionType];
-        sortObject : ?SortInputType;
+        sortObject : ?SortMultipleInputType;
         searchObject : ?SearchInputType;
     };
 
@@ -73,7 +73,7 @@ module {
         filterExpressions : [SearchTypes.FilterExpressionType];
         offset : Nat;
         limit : Nat;
-        sortObject : ?SortInputType;
+        sortObject : ?SortMultipleInputType;
         searchObject : ?SearchInputType;
     };
 
@@ -131,6 +131,12 @@ module {
         sortKeyDataType : ?Datatypes.AttributeDataType;
         sortDirection : ?Datatypes.SortDirection;
     };
+
+    public type SortMultipleInputType = [{
+        sortKey : ?Text;
+        sortKeyDataType : ?Datatypes.AttributeDataType;
+        sortDirection : ?Datatypes.SortDirection;
+    }];
 
     public type SearchInputType = {
         searchValue : ?Text;

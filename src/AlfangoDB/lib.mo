@@ -84,6 +84,7 @@ module {
     public type ScanAndGetIdsWithSearchAndSortInputType = InputTypes.ScanAndGetIdsWithSearchAndSortInputType;
     public type PaginatedScanInputType = InputTypes.PaginatedScanInputType;
     public type SortInputType = InputTypes.SortInputType;
+    public type SortMultipleInputType = InputTypes.SortMultipleInputType;
     public type SearchInputType = InputTypes.SearchInputType;
     public type ForeignKeyInputType = InputTypes.ForeignKeyInputType;
 
