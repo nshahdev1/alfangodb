@@ -430,35 +430,8 @@ module {
 
         var sortedItems : OutputTypes.ItemArrayOutputType = [];
 
-        ignore do ? {
-            for (sortKeyObject in sortObject.vals()) {
-
-                let sortDirection = Utils.initializeSortOrder(sortKeyObject.sortDirection, #desc);
-
-                let sortKeyDataType = Utils.initializeSortKeyDataType(sortKeyObject.sortKeyDataType, #nat);
-
-                let sortKey = sortKeyObject.sortKey;
-
-                switch (sortKey) {
-                    case (?sortKey) {
-
-                        switch (sortDirection) {
-                            case (#desc) {
-                                let items = Map.toArrayDesc(tableItems);
-                                sortedItems := Utils.sortDescending(items, sortKey, sortKeyDataType);
-                            };
-                            case (#asc) {
-                                let items = Map.toArray(tableItems);
-                                sortedItems := Utils.sortAscending(items, sortKey, sortKeyDataType);
-                            };
-                        };
-
-                    };
-
-                    case null sortedItems := Map.toArrayDesc(tableItems);
-                };
-            };
-        };
+        let items = Map.toArrayDesc(tableItems);
+        sortedItems := Utils.sortMap(sortObject, items);
 
         return sortedItems;
     };
@@ -493,24 +466,7 @@ module {
 
         var sortedItems : [OutputTypes.ItemOutputType] = [];
 
-        ignore do ? {
-            for (sortKeyObject in sortObject.vals()) {
-
-                let sortDirection = sortKeyObject.sortDirection!;
-                let sortKeyDataType = sortKeyObject.sortKeyDataType!;
-                let sortKey = sortKeyObject.sortKey;
-
-                switch (sortKey) {
-                    case (?sortKey) {
-
-                        sortedItems := Utils.getSortOrder(sortDirection, sortKeyDataType, sortKey, tableItems);
-
-                    };
-
-                    case null sortedItems := tableItems;
-                };
-            };
-        };
+        sortedItems := Utils.sortItems(sortObject, tableItems);
 
         return sortedItems;
     };

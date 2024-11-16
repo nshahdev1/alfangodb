@@ -255,6 +255,70 @@ module {
         return sortedItems;
     };
 
+    public func sortItems(
+        sortObject : InputTypes.SortMultipleInputType,
+        events : [Output.ItemOutputType],
+    ) : [Output.ItemOutputType] {
+
+        var sortedItems : [Output.ItemOutputType] = [];
+
+        sortedItems := Array.sort(
+            events,
+            (
+                func(a : Output.ItemOutputType, b : Output.ItemOutputType) : Order.Order {
+
+                    var comparison : Order.Order = #equal;
+
+                    ignore do ? {
+                        for (sortKeyObject in sortObject.vals()) {
+
+                            let sortDirection = sortKeyObject.sortDirection!;
+                            let sortKeyDataType = sortKeyObject.sortKeyDataType!;
+                            let sortKey = sortKeyObject.sortKey!;
+
+                            switch (sortKeyDataType) {
+                                case (#nat) {
+
+                                    let array_a = a.item;
+                                    let key_a = getNatKeyValue(array_a, sortKey);
+
+                                    let array_b = b.item;
+                                    let key_b = getNatKeyValue(array_b, sortKey);
+
+                                    comparison := handleNatComparsion(key_a, key_b, sortDirection);
+                                };
+                                case (#nat64) {
+
+                                    let array_a = a.item;
+                                    let key_a = getNat64KeyValue(array_a, sortKey);
+
+                                    let array_b = b.item;
+                                    let key_b = getNat64KeyValue(array_b, sortKey);
+
+                                    comparison := handleNat64Comparsion(key_a, key_b, sortDirection);
+
+                                };
+                                case _ {
+                                    let array_a = a.item;
+                                    let key_a = getTextKeyValue(array_a, sortKey);
+
+                                    let array_b = b.item;
+                                    let key_b = getTextKeyValue(array_b, sortKey);
+
+                                    comparison := handleTextComparision(key_a, key_b, sortDirection);
+
+                                };
+                            };
+                        };
+                    };
+                    return comparison;
+                }
+            ),
+        );
+
+        return sortedItems;
+    };
+
     public func getNatKeyValue(array : [(Database.AttributeName, Datatypes.AttributeDataValue)], sortKey : Text) : Nat {
 
         let tuple = Array.find<(Text, Datatypes.AttributeDataValue)>(
@@ -598,53 +662,66 @@ module {
         return sortedItems;
     };
 
-    public func sortDescending(items : [(Database.Id, Database.Item)], sortKey : Text, sortKeyDataType : Datatypes.AttributeDataType) : [(Database.Id, Database.Item)] {
+    public func sortMap(sortObject : InputTypes.SortMultipleInputType, items : [(Database.Id, Database.Item)]) : [(Database.Id, Database.Item)] {
         var sortedItems : [(Database.Id, Database.Item)] = [];
 
-        switch (sortKeyDataType) {
-            case (#nat) {
-                sortedItems := Array.sort(
-                    items,
-                    (
-                        func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
-                            let array_a = Map.toArray(a.1.attributeDataValueMap);
+        sortedItems := Array.sort(
+            items,
+            (
+                func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
 
-                            let array_b = Map.toArray(b.1.attributeDataValueMap);
+                    var comparison : Order.Order = #equal;
 
-                            return Nat.compare(getNatKeyValue(array_b, sortKey), getNatKeyValue(array_a, sortKey)); // Sort in descending order
-                        }
-                    ),
-                );
-            };
-            case (#nat64) {
-                sortedItems := Array.sort(
-                    items,
-                    (
-                        func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
-                            let array_a = Map.toArray(a.1.attributeDataValueMap);
+                    ignore do ? {
+                        for (sortKeyObject in sortObject.vals()) {
 
-                            let array_b = Map.toArray(b.1.attributeDataValueMap);
+                            let sortDirection = sortKeyObject.sortDirection!;
+                            let sortKeyDataType = sortKeyObject.sortKeyDataType!;
+                            let sortKey = sortKeyObject.sortKey!;
 
-                            return Nat64.compare(getNat64KeyValue(array_b, sortKey), getNat64KeyValue(array_a, sortKey)); // Sort in descending order
-                        }
-                    ),
-                );
-            };
-            case _ {
-                sortedItems := Array.sort(
-                    items,
-                    (
-                        func(a : (Database.Id, Database.Item), b : (Database.Id, Database.Item)) : Order.Order {
-                            let array_a = Map.toArray(a.1.attributeDataValueMap);
+                            switch (sortKeyDataType) {
+                                case (#nat) {
+                                    let array_a = Map.toArray(a.1.attributeDataValueMap);
+                                    let key_a = getNatKeyValue(array_a, sortKey);
 
-                            let array_b = Map.toArray(b.1.attributeDataValueMap);
+                                    let array_b = Map.toArray(b.1.attributeDataValueMap);
+                                    let key_b = getNatKeyValue(array_b, sortKey);
 
-                            return Text.compare(getTextKeyValue(array_b, sortKey), getTextKeyValue(array_a, sortKey)); // Sort in descending order
-                        }
-                    ),
-                );
-            };
-        };
+                                    comparison := handleNatComparsion(key_a, key_b, sortDirection);
+
+                                };
+                                case (#nat64) {
+
+                                    let array_a = Map.toArray(a.1.attributeDataValueMap);
+                                    let key_a = getNat64KeyValue(array_a, sortKey);
+
+                                    let array_b = Map.toArray(b.1.attributeDataValueMap);
+                                    let key_b = getNat64KeyValue(array_b, sortKey);
+
+                                    comparison := handleNat64Comparsion(key_a, key_b, sortDirection);
+
+                                };
+                                case _ {
+
+                                    let array_a = Map.toArray(a.1.attributeDataValueMap);
+                                    let key_a = getTextKeyValue(array_a, sortKey);
+
+                                    let array_b = Map.toArray(b.1.attributeDataValueMap);
+                                    let key_b = getTextKeyValue(array_b, sortKey);
+
+                                    comparison := handleTextComparision(key_a, key_b, sortDirection);
+
+                                };
+                            };
+                        };
+                        return comparison;
+                    };
+
+                    return comparison;
+                }
+            ),
+        );
+
         return sortedItems;
     };
 
