@@ -270,7 +270,7 @@ module {
                     var comparison : Order.Order = #equal;
 
                     ignore do ? {
-                        for (sortKeyObject in sortObject.vals()) {
+                        label sortKeyArrayItems for (sortKeyObject in sortObject.vals()) {
 
                             let sortDirection = sortKeyObject.sortDirection!;
                             let sortKeyDataType = sortKeyObject.sortKeyDataType!;
@@ -320,6 +320,10 @@ module {
                                     comparison := handleTextComparision(key_a, key_b, sortDirection);
 
                                 };
+                            };
+
+                            if (comparison != #equal) {
+                                break sortKeyArrayItems;
                             };
                         };
                     };
@@ -716,7 +720,7 @@ module {
                     var comparison : Order.Order = #equal;
 
                     ignore do ? {
-                        for (sortKeyObject in sortObject.vals()) {
+                        label sortKeyMapItems for (sortKeyObject in sortObject.vals()) {
 
                             let sortDirection = sortKeyObject.sortDirection!;
                             let sortKeyDataType = sortKeyObject.sortKeyDataType!;
@@ -756,8 +760,12 @@ module {
 
                                 };
                             };
+
+                            if (comparison != #equal) {
+                                break sortKeyMapItems;
+                            };
                         };
-                        return comparison;
+
                     };
 
                     return comparison;
@@ -783,11 +791,12 @@ module {
 
                     ignore do ? {
 
-                        for (sortKeyObject in sortKeysArray.vals()) {
+                        label sortKeyArrayItems for (sortKeyObject in sortKeysArray.vals()) {
 
                             let sortDirection = sortKeyObject.sortDirection!;
                             let sortKeyDataType = sortKeyObject.sortKeyDataType!;
                             let sortKey = sortKeyObject.sortKey!;
+
                             switch (sortKeyDataType) {
 
                                 case (#nat) {
@@ -835,6 +844,9 @@ module {
                                 };
                             };
 
+                            if (comparison != #equal) {
+                                break sortKeyArrayItems;
+                            };
                         };
 
                     };
