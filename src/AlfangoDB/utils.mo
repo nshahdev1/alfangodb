@@ -257,13 +257,13 @@ module {
 
     public func sortItems(
         sortObject : InputTypes.SortMultipleInputType,
-        events : [Output.ItemOutputType],
+        items : [Output.ItemOutputType],
     ) : [Output.ItemOutputType] {
 
         var sortedItems : [Output.ItemOutputType] = [];
 
         sortedItems := Array.sort(
-            events,
+            items,
             (
                 func(a : Output.ItemOutputType, b : Output.ItemOutputType) : Order.Order {
 
@@ -719,9 +719,9 @@ module {
 
                     var comparison : Order.Order = #equal;
 
-                    ignore do ? {
-                        label sortKeyMapItems for (sortKeyObject in sortObject.vals()) {
+                    label sortKeyMapItems for (sortKeyObject in sortObject.vals()) {
 
+                        ignore do ? {
                             let sortDirection = sortKeyObject.sortDirection!;
                             let sortKeyDataType = sortKeyObject.sortKeyDataType!;
                             let sortKey = sortKeyObject.sortKey!;
